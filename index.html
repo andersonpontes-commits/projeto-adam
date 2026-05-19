@@ -91,7 +91,7 @@ body::after {
 ═══════════════════════════════════════════════ */
 #hero {
   position: relative;
-  min-height: 100vh;
+  min-height: 100svh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1240,19 +1240,12 @@ footer {
 .footer-sig span { color: var(--accent); }
 
 /* ═══════════════════════════════════════════════
-   GSAP INITIAL STATES (hidden before reveal)
+   GSAP INITIAL STATES
 ═══════════════════════════════════════════════ */
-.reveal {
-  opacity: 0;
-  transform: translateY(24px);
-}
-.reveal-left {
-  opacity: 0;
-  transform: translateX(-24px);
-}
-.reveal-right {
-  opacity: 0;
-  transform: translateX(24px);
+/* Removido o opacity:0 estático do CSS para garantir que se o GSAP falhar 
+   no mobile, o conteúdo ainda fique visível por padrão. O JS vai esconder. */
+.reveal, .reveal-left, .reveal-right {
+  /* States applied via JS */
 }
 
 /* ═══════════════════════════════════════════════
@@ -2354,10 +2347,14 @@ window.addEventListener('load', function() {
   if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
   gsap.registerPlugin(ScrollTrigger);
 
+  // Set initial states via JS so it degrades gracefully on mobile if JS fails
+  gsap.set('.reveal', { opacity: 0, y: 28 });
+  gsap.set('.reveal-left', { opacity: 0, x: -32 });
+  gsap.set('.reveal-right', { opacity: 0, x: 32 });
+
   // Generic reveal
   gsap.utils.toArray('.reveal').forEach(el => {
-    gsap.fromTo(el,
-      { opacity: 0, y: 28 },
+    gsap.to(el,
       {
         opacity: 1, y: 0, duration: 0.7, ease: 'power2.out',
         scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play none none none' }
@@ -2367,8 +2364,7 @@ window.addEventListener('load', function() {
 
   // Left reveals
   gsap.utils.toArray('.reveal-left').forEach(el => {
-    gsap.fromTo(el,
-      { opacity: 0, x: -32 },
+    gsap.to(el,
       {
         opacity: 1, x: 0, duration: 0.7, ease: 'power2.out',
         scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play none none none' }
@@ -2378,8 +2374,7 @@ window.addEventListener('load', function() {
 
   // Right reveals
   gsap.utils.toArray('.reveal-right').forEach(el => {
-    gsap.fromTo(el,
-      { opacity: 0, x: 32 },
+    gsap.to(el,
       {
         opacity: 1, x: 0, duration: 0.7, ease: 'power2.out',
         scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play none none none' }
@@ -2404,12 +2399,12 @@ window.addEventListener('load', function() {
   });
 
   // Cap cards stagger
+  gsap.set('.cap-card', { opacity: 0, y: 32 });
   gsap.utils.toArray('.cap-card').forEach((card, i) => {
     ScrollTrigger.getAll().forEach(st => {
       if (st.vars.trigger === card) st.kill();
     });
-    gsap.fromTo(card,
-      { opacity: 0, y: 32 },
+    gsap.to(card,
       {
         opacity: 1, y: 0,
         duration: 0.6,
@@ -2421,12 +2416,12 @@ window.addEventListener('load', function() {
   });
 
   // Timeline stagger
+  gsap.set('#timeline-items .timeline-item', { opacity: 0, y: 24 });
   gsap.utils.toArray('#timeline-items .timeline-item').forEach((item, i) => {
     ScrollTrigger.getAll().forEach(st => {
       if (st.vars.trigger === item) st.kill();
     });
-    gsap.fromTo(item,
-      { opacity: 0, y: 24 },
+    gsap.to(item,
       {
         opacity: 1, y: 0, duration: 0.6, delay: i * 0.12, ease: 'power2.out',
         scrollTrigger: { trigger: '#timeline-items', start: 'top 85%', toggleActions: 'play none none none' }
@@ -2435,12 +2430,12 @@ window.addEventListener('load', function() {
   });
 
   // Indicator rows stagger
+  gsap.set('.indicator-row', { opacity: 0, x: -20 });
   gsap.utils.toArray('.indicator-row').forEach((row, i) => {
     ScrollTrigger.getAll().forEach(st => {
       if (st.vars.trigger === row) st.kill();
     });
-    gsap.fromTo(row,
-      { opacity: 0, x: -20 },
+    gsap.to(row,
       {
         opacity: 1, x: 0, duration: 0.5, delay: i * 0.1, ease: 'power2.out',
         scrollTrigger: { trigger: row, start: 'top 90%', toggleActions: 'play none none none' }
