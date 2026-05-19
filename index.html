@@ -1313,6 +1313,50 @@ footer {
 
 
 /* ═══════════════════════════════════════════════
+   LIGHTBOX
+═══════════════════════════════════════════════ */
+#lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  background: rgba(5,10,14,0.95);
+  backdrop-filter: blur(5px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+  padding: 20px;
+}
+#lightbox.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+#lightbox-img {
+  max-width: 100%;
+  max-height: 85vh;
+  object-fit: contain;
+  border: 1px solid var(--accent);
+  box-shadow: 0 0 40px rgba(0,200,232,0.15);
+  transform: scale(0.95);
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+#lightbox.active #lightbox-img {
+  transform: scale(1);
+}
+.lightbox-close {
+  margin-top: 24px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--accent);
+  letter-spacing: 3px;
+  cursor: pointer;
+}
+.concept-image-wrap img { cursor: pointer; }
+
+/* ═══════════════════════════════════════════════
    CUSTOM CURSOR
 ═══════════════════════════════════════════════ */
 @media (pointer: fine) {
@@ -2101,6 +2145,12 @@ footer {
   </div>
 </footer>
 
+<!-- ═══════════════════════════════ LIGHTBOX ═══════════════════════════════ -->
+<div id="lightbox" aria-hidden="true" role="dialog">
+  <img id="lightbox-img" src="" alt="Visão ampliada">
+  <div class="lightbox-close">FECHAR [X]</div>
+</div>
+
 <!-- ═══════════════════════════════ SCRIPTS ═══════════════════════════════ -->
 <script>
 /* ─────────────────────────────────────────
@@ -2449,7 +2499,7 @@ window.addEventListener('load', function() {
     mouseY = e.clientY;
   });
 
-  document.querySelectorAll('a, button, .hud-tab, .hero-skip').forEach(el => {
+  document.querySelectorAll('a, button, .hud-tab, .hero-skip, .concept-image-wrap img').forEach(el => {
     el.addEventListener('mouseenter', () => cursorOuter.classList.add('hovering'));
     el.addEventListener('mouseleave', () => cursorOuter.classList.remove('hovering'));
   });
@@ -2559,6 +2609,27 @@ window.addEventListener('load', function() {
     });
   }
 });
+
+/* ─────────────────────────────────────────
+   LIGHTBOX LOGIC
+───────────────────────────────────────── */
+(function() {
+  const lightbox = document.getElementById('lightbox');
+  const lbImg = document.getElementById('lightbox-img');
+  if(!lightbox || !lbImg) return;
+
+  document.querySelectorAll('.concept-image-wrap img').forEach(img => {
+    img.addEventListener('click', () => {
+      lbImg.src = img.src;
+      lbImg.alt = img.alt;
+      lightbox.classList.add('active');
+    });
+  });
+
+  lightbox.addEventListener('click', () => {
+    lightbox.classList.remove('active');
+  });
+})();
 </script>
 
 </body>
