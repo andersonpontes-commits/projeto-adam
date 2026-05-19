@@ -1310,15 +1310,7 @@ footer {
   footer { padding-left: 20px; padding-right: 20px; }
   .footer-bottom { flex-direction: column; gap: 16px; text-align: center; }
   .footer-sig { text-align: center; }
-}
 
-/* Reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
-}
 
 /* ═══════════════════════════════════════════════
    CUSTOM CURSOR
@@ -2260,12 +2252,8 @@ footer {
 
   document.getElementById('btn-skip').addEventListener('click', skipBoot);
 
-  // Check reduced motion
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    skipBoot();
-  } else {
-    runBoot();
-  }
+  // Always run boot animation
+  runBoot();
 })();
 
 /* ─────────────────────────────────────────
