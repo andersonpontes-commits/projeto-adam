@@ -1317,22 +1317,26 @@ footer {
 ═══════════════════════════════════════════════ */
 #lightbox {
   position: fixed;
-  inset: 0;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
   z-index: 999999;
   background: rgba(5,10,14,0.95);
   backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.3s;
+  visibility: hidden;
+  transition: opacity 0.3s, visibility 0.3s;
   padding: 20px;
 }
 #lightbox.active {
   opacity: 1;
   pointer-events: auto;
+  visibility: visible;
 }
 #lightbox-img {
   max-width: 100%;
