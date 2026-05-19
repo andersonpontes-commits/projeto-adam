@@ -3,792 +3,1627 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>A.D.A.M. — Sistema de Diagnóstico Atmosférico</title>
+<title>A.D.A.M. — Atmospheric Diagnostic &amp; Analysis Module</title>
+<meta name="description" content="A.D.A.M. — Módulo portátil de diagnóstico atmosférico e suporte operacional desenvolvido por Laveine Addams. Sapiens II.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Exo+2:ital,wght@0,100;0,300;0,400;1,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
 <style>
-  :root {
-    --bg: #050A0E;
-    --bg2: #080F14;
-    --panel: #0A1420;
-    --panel2: #0D1B2A;
-    --border: #1A3A4A;
-    --border2: #0F2535;
-    --accent: #00C8E8;
-    --accent2: #0096B0;
-    --accent-dim: rgba(0,200,232,0.12);
-    --accent-glow: rgba(0,200,232,0.4);
-    --amber: #F0A030;
-    --amber-dim: rgba(240,160,48,0.15);
-    --green: #20E080;
-    --green-dim: rgba(32,224,128,0.12);
-    --red: #E04040;
-    --orange: #E07820;
-    --text: #B8D4E0;
-    --text-dim: #5A8090;
-    --text-bright: #D8F0FF;
-    --mono: 'Share Tech Mono', monospace;
-    --head: 'Rajdhani', sans-serif;
-    --body: 'Exo 2', sans-serif;
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  html { scroll-behavior: smooth; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--body);
-    font-weight: 300;
-    line-height: 1.7;
-    overflow-x: hidden;
-  }
-
-  /* SCANLINE OVERLAY */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0,0,0,0.08) 2px,
-      rgba(0,0,0,0.08) 4px
-    );
-    pointer-events: none;
-    z-index: 9999;
-  }
-
-  /* GRID BACKGROUND */
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(0,200,232,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,200,232,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  /* ── HEADER ── */
-  header {
-    position: relative;
-    z-index: 10;
-    border-bottom: 1px solid var(--border);
-    background: linear-gradient(180deg, rgba(0,200,232,0.05) 0%, transparent 100%);
-    padding: 0 40px;
-  }
-
-  .header-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 0 12px;
-    border-bottom: 1px solid var(--border2);
-  }
-
-  .sys-id {
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--text-dim);
-    letter-spacing: 3px;
-    text-transform: uppercase;
-  }
-
-  .status-bar {
-    display: flex;
-    gap: 20px;
-    align-items: center;
-  }
-
-  .status-dot {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--text-dim);
-  }
-
-  .dot {
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: var(--green);
-    box-shadow: 0 0 8px var(--green);
-    animation: pulse 2s infinite;
-  }
-
-  .dot.amber { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-  }
-
-  .header-main {
-    padding: 40px 0 36px;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 40px;
-    align-items: end;
-  }
-
-  .main-title {
-    font-family: var(--head);
-    font-size: clamp(52px, 7vw, 96px);
-    font-weight: 700;
-    letter-spacing: -2px;
-    line-height: 0.9;
-    color: var(--text-bright);
-    position: relative;
-  }
-
-  .main-title .acronym {
-    display: block;
-    background: linear-gradient(135deg, var(--accent), #40E0F0);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-shadow: none;
-    filter: drop-shadow(0 0 30px rgba(0,200,232,0.5));
-  }
-
-  .main-title .subtitle-text {
-    display: block;
-    font-size: clamp(11px, 1.2vw, 16px);
-    font-weight: 400;
-    letter-spacing: 4px;
-    color: var(--accent);
-    -webkit-text-fill-color: var(--accent);
-    background: none;
-    filter: none;
-    margin-top: 12px;
-    font-family: var(--mono);
-  }
-
-  .header-meta {
-    text-align: right;
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--text-dim);
-    line-height: 2;
-  }
-
-  .header-meta span {
-    display: block;
-  }
-
-  .header-meta .val {
-    color: var(--accent);
-  }
-
-  /* ── NAV ── */
-  nav {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: rgba(5,10,14,0.95);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border);
-    padding: 0 40px;
-    display: flex;
-    gap: 0;
-    overflow-x: auto;
-  }
-
-  nav a {
-    font-family: var(--head);
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--text-dim);
-    text-decoration: none;
-    padding: 16px 20px;
-    border-bottom: 2px solid transparent;
-    transition: all 0.2s;
-    white-space: nowrap;
-  }
-
-  nav a:hover {
-    color: var(--accent);
-    border-bottom-color: var(--accent);
-  }
-
-  /* ── LAYOUT ── */
-  main {
-    position: relative;
-    z-index: 1;
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 0 40px 80px;
-  }
-
-  /* ── SECTIONS ── */
-  section {
-    padding: 80px 0;
-    border-bottom: 1px solid var(--border2);
-  }
-
-  .section-label {
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 5px;
-    color: var(--accent);
-    text-transform: uppercase;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .section-label::after {
-    content: '';
-    flex: 1;
-    max-width: 60px;
-    height: 1px;
-    background: var(--accent);
-    opacity: 0.4;
-  }
-
-  .section-title {
-    font-family: var(--head);
-    font-size: clamp(28px, 4vw, 52px);
-    font-weight: 700;
-    color: var(--text-bright);
-    letter-spacing: -1px;
-    line-height: 1;
-    margin-bottom: 32px;
-  }
-
-  /* ── OVERVIEW GRID ── */
-  .overview-grid {
-    display: grid;
-    grid-template-columns: 1fr 340px;
-    gap: 40px;
-    align-items: start;
-  }
-
-  .overview-text p {
-    font-size: 15px;
-    margin-bottom: 20px;
-    color: var(--text);
-    max-width: 680px;
-  }
-
-  .overview-text p:first-child {
-    font-size: 18px;
-    color: var(--text-bright);
-    font-weight: 400;
-    line-height: 1.6;
-  }
-
-  /* ── SPECS PANEL ── */
-  .specs-panel {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    padding: 0;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .specs-panel::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--accent), transparent);
-  }
-
-  .specs-header {
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--accent);
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .specs-header .blink {
-    width: 6px; height: 6px;
-    background: var(--accent);
-    border-radius: 50%;
-    animation: pulse 1s infinite;
-  }
-
-  .spec-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    padding: 12px 20px;
-    border-bottom: 1px solid var(--border2);
-    gap: 16px;
-  }
-
-  .spec-row:last-child { border-bottom: none; }
-
-  .spec-key {
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--text-dim);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    flex-shrink: 0;
-  }
-
-  .spec-val {
-    font-family: var(--mono);
-    font-size: 12px;
-    color: var(--accent);
-    text-align: right;
-  }
-
-  /* ── CAPABILITY CARDS ── */
-  .cap-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 2px;
-    background: var(--border2);
-    border: 1px solid var(--border2);
-  }
-
-  .cap-card {
-    background: var(--panel);
-    padding: 28px 24px;
-    position: relative;
-    overflow: hidden;
-    transition: background 0.2s;
-  }
-
-  .cap-card:hover {
-    background: var(--panel2);
-  }
-
-  .cap-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0;
-    width: 3px;
-    height: 100%;
-    background: var(--accent);
-    opacity: 0;
-    transition: opacity 0.2s;
-  }
-
-  .cap-card:hover::before { opacity: 1; }
-
-  .cap-icon {
-    width: 36px; height: 36px;
-    border: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 16px;
-    font-size: 16px;
-    color: var(--accent);
-    position: relative;
-  }
-
-  .cap-icon::after {
-    content: '';
-    position: absolute;
-    inset: 3px;
-    background: var(--accent-dim);
-  }
-
-  .cap-title {
-    font-family: var(--head);
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text-bright);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-bottom: 10px;
-  }
-
-  .cap-desc {
-    font-size: 13px;
-    color: var(--text-dim);
-    line-height: 1.6;
-  }
-
-  /* ── UNIT SECTION ── */
-  .unit-header {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: 24px;
-    align-items: center;
-    padding: 32px;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    margin-bottom: 2px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .unit-header::after {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, var(--accent), transparent);
-  }
-
-  .unit-badge {
-    width: 80px; height: 80px;
-    border: 2px solid var(--accent);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--head);
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--accent);
-    position: relative;
-    flex-shrink: 0;
-    box-shadow: inset 0 0 20px var(--accent-dim), 0 0 20px var(--accent-dim);
-  }
-
-  .unit-badge::before {
-    content: '';
-    position: absolute;
-    inset: 6px;
-    border: 1px solid var(--accent);
-    opacity: 0.3;
-  }
-
-  .unit-name {
-    font-family: var(--head);
-    font-size: 32px;
-    font-weight: 700;
-    color: var(--text-bright);
-    letter-spacing: -1px;
-    line-height: 1;
-  }
-
-  .unit-fullname {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--text-dim);
-    letter-spacing: 2px;
-    margin-top: 6px;
-  }
-
-  .unit-status {
-    text-align: right;
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--text-dim);
-    line-height: 2;
-  }
-
-  .unit-status .active {
-    color: var(--green);
-  }
-
-  /* ── VARIANT CARDS ── */
-  .variant-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2px;
-    background: var(--border2);
-    margin-bottom: 2px;
-  }
-
-  .variant-card {
-    background: var(--panel);
-    padding: 28px;
-    border-left: 3px solid transparent;
-  }
-
-  .variant-card.scout { border-left-color: var(--accent); }
-  .variant-card.pathfinder { border-left-color: var(--amber); }
-
-  .variant-tag {
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 4px;
-    color: var(--accent);
-    text-transform: uppercase;
-    margin-bottom: 6px;
-  }
-
-  .variant-card.pathfinder .variant-tag { color: var(--amber); }
-
-  .variant-name {
-    font-family: var(--head);
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--text-bright);
-    margin-bottom: 16px;
-  }
-
-  /* ── DATA LISTS ── */
-  .data-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .data-list li {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    font-size: 13px;
-    color: var(--text-dim);
-    font-family: var(--mono);
-  }
-
-  .data-list li::before {
-    content: '▸';
-    color: var(--accent);
-    flex-shrink: 0;
-    font-size: 10px;
-  }
-
-  .variant-card.pathfinder .data-list li::before { color: var(--amber); }
-
-  /* ── METRICS ── */
-  .metrics-strip {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 2px;
-    background: var(--border2);
-    margin-bottom: 2px;
-  }
-
-  .metric-box {
-    background: var(--panel);
-    padding: 24px;
-    text-align: center;
-  }
-
-  .metric-val {
-    font-family: var(--head);
-    font-size: 36px;
-    font-weight: 700;
-    color: var(--accent);
-    line-height: 1;
-    margin-bottom: 6px;
-    display: block;
-  }
-
-  .metric-label {
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--text-dim);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
-
-  /* ── STATUS INDICATOR TABLE ── */
-  .indicator-table {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    background: var(--border2);
-    border: 1px solid var(--border2);
-  }
-
-  .indicator-row {
-    display: grid;
-    grid-template-columns: 60px 140px 1fr;
-    align-items: center;
-    gap: 0;
-    background: var(--panel);
-  }
-
-  .ind-color {
-    height: 100%;
-    min-height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .ind-dot {
-    width: 12px; height: 12px;
-    border-radius: 50%;
-  }
-
-  .ind-dot.blue   { background: #00C8E8; box-shadow: 0 0 10px #00C8E8; }
-  .ind-dot.green  { background: #20E080; box-shadow: 0 0 10px #20E080; }
-  .ind-dot.yellow { background: #E0D020; box-shadow: 0 0 10px #E0D020; }
-  .ind-dot.orange { background: #E07820; box-shadow: 0 0 10px #E07820; }
-  .ind-dot.red    { background: #E04040; box-shadow: 0 0 10px #E04040; }
-
-  .ind-name {
-    font-family: var(--mono);
-    font-size: 12px;
-    color: var(--text);
-    padding: 0 20px;
-    border-left: 1px solid var(--border2);
-    border-right: 1px solid var(--border2);
-    height: 100%;
-    display: flex;
-    align-items: center;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-
-  .ind-desc {
-    font-size: 13px;
-    color: var(--text-dim);
-    padding: 14px 20px;
-  }
-
-  /* ── ORBIS SECTION ── */
-  .orbis-badge {
-    background: linear-gradient(135deg, #0D1B2A, #0A1420);
-    border: 1px solid var(--border);
-    border-radius: 0;
-  }
-
-  .orbis-badge .unit-badge {
-    border-color: var(--green);
-    color: var(--green);
-    box-shadow: inset 0 0 20px var(--green-dim), 0 0 20px var(--green-dim);
-  }
-
-  .orbis-badge .unit-badge::before { border-color: var(--green); }
-
-  /* ── FOOTER ── */
-  footer {
-    position: relative;
-    z-index: 1;
-    border-top: 1px solid var(--border);
-    padding: 32px 40px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: linear-gradient(0deg, rgba(0,200,232,0.03) 0%, transparent 100%);
-  }
-
-  .footer-id {
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--text-dim);
-    letter-spacing: 3px;
-  }
-
-  .footer-sig {
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--text-dim);
-    text-align: right;
-  }
-
-  .footer-sig span { color: var(--accent); }
-
-  /* ── ANIMATIONS ── */
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  section {
-    animation: fadeUp 0.6s ease both;
-  }
-
-  section:nth-child(1) { animation-delay: 0.1s; }
-  section:nth-child(2) { animation-delay: 0.2s; }
-  section:nth-child(3) { animation-delay: 0.3s; }
-
-  /* ── DIVIDER ── */
-  .h-divider {
-    height: 1px;
-    background: linear-gradient(90deg, var(--accent), transparent);
-    margin: 32px 0;
-    opacity: 0.3;
-  }
-
-  /* ── FULL TEXT BLOCK ── */
-  .text-block {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--accent);
-    padding: 28px 32px;
-    font-size: 14px;
-    color: var(--text);
-    line-height: 1.8;
-  }
-
-  .text-block p { margin-bottom: 16px; }
-  .text-block p:last-child { margin-bottom: 0; }
-
-  /* ── HIGHLIGHT ── */
-  .hl { color: var(--accent); }
-  .hl-amber { color: var(--amber); }
-  .hl-green { color: var(--green); }
-
-  /* ── BLACK BOX CALLOUT ── */
-  .callout {
-    background: rgba(0,200,232,0.06);
-    border: 1px solid var(--accent);
-    padding: 20px 24px;
-    display: flex;
-    gap: 16px;
-    align-items: flex-start;
-    margin-top: 24px;
-  }
-
-  .callout-icon {
-    font-size: 20px;
-    flex-shrink: 0;
-    margin-top: 2px;
-  }
-
-  .callout-title {
-    font-family: var(--head);
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--accent);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 6px;
-  }
-
-  .callout-text {
-    font-size: 13px;
-    color: var(--text-dim);
-  }
-
-  /* scrollbar */
-  ::-webkit-scrollbar { width: 4px; height: 4px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--border); }
-  ::-webkit-scrollbar-thumb:hover { background: var(--accent2); }
-
-  @media (max-width: 900px) {
-    header, nav, main, footer { padding-left: 20px; padding-right: 20px; }
-    .overview-grid { grid-template-columns: 1fr; }
-    .variant-grid { grid-template-columns: 1fr; }
-    .metrics-strip { grid-template-columns: repeat(2, 1fr); }
-    .unit-header { grid-template-columns: auto 1fr; }
-    .unit-status { display: none; }
-    .indicator-row { grid-template-columns: 50px 120px 1fr; }
-  }
+/* ═══════════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════════ */
+:root {
+  --bg:          #050A0E;
+  --bg2:         #080F14;
+  --panel:       #0A1420;
+  --panel2:      #0D1B2A;
+  --border:      #1A3A4A;
+  --border2:     #0F2535;
+  --accent:      #00C8E8;
+  --accent2:     #0096B0;
+  --accent-dim:  rgba(0,200,232,0.12);
+  --accent-glow: rgba(0,200,232,0.4);
+  --amber:       #F0A030;
+  --amber-dim:   rgba(240,160,48,0.15);
+  --green:       #20E080;
+  --green-dim:   rgba(32,224,128,0.12);
+  --red:         #E04040;
+  --orange:      #E07820;
+  --text:        #B8D4E0;
+  --text-dim:    #5A8090;
+  --text-bright: #D8F0FF;
+  --mono:  'Share Tech Mono', monospace;
+  --head:  'Rajdhani', sans-serif;
+  --body:  'Exo 2', sans-serif;
+}
+
+/* ═══════════════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════════════ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--body);
+  font-weight: 300;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* SCANLINE OVERLAY */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent, transparent 2px,
+    rgba(0,0,0,0.07) 2px, rgba(0,0,0,0.07) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* GRID BACKGROUND */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,200,232,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,200,232,0.025) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); }
+::-webkit-scrollbar-thumb:hover { background: var(--accent2); }
+
+/* ═══════════════════════════════════════════════
+   HERO SECTION
+═══════════════════════════════════════════════ */
+#hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  z-index: 1;
+}
+
+#hero-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.hero-bg-image {
+  position: absolute;
+  inset: 0;
+  background-image: url('assets/images/adam-render.png');
+  background-size: cover;
+  background-position: center 20%;
+  opacity: 0.08;
+  z-index: 0;
+  filter: blur(2px) saturate(0.5);
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(0,200,232,0.04) 0%, transparent 70%),
+              linear-gradient(180deg, transparent 0%, var(--bg) 100%);
+  z-index: 1;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: 40px 20px;
+  max-width: 800px;
+  width: 100%;
+}
+
+/* Terminal Boot */
+.boot-terminal {
+  background: rgba(5,10,14,0.8);
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--accent);
+  padding: 24px 28px;
+  margin-bottom: 48px;
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text-dim);
+  position: relative;
+  backdrop-filter: blur(8px);
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 4px;
+}
+
+.boot-terminal::before {
+  content: 'A.D.A.M. BOOT SEQUENCE';
+  position: absolute;
+  top: -10px;
+  left: 16px;
+  background: var(--bg);
+  padding: 0 8px;
+  font-size: 9px;
+  color: var(--accent);
+  letter-spacing: 3px;
+}
+
+.boot-line {
+  display: flex;
+  gap: 8px;
+  line-height: 1.6;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.boot-line.visible { opacity: 1; }
+.boot-line .ok   { color: var(--green); }
+.boot-line .wait { color: var(--amber); }
+.boot-line .done { color: var(--accent); }
+.boot-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 14px;
+  background: var(--accent);
+  vertical-align: middle;
+  animation: blink 0.7s step-end infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+/* Hero Title */
+.hero-title-wrap {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.hero-title-wrap.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.hero-logo {
+  margin-bottom: 16px;
+}
+
+.hero-acronym {
+  font-family: var(--head);
+  font-size: clamp(72px, 12vw, 130px);
+  font-weight: 700;
+  letter-spacing: -3px;
+  line-height: 0.85;
+  background: linear-gradient(135deg, #40E8FF 0%, var(--accent) 50%, #0096B0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 40px rgba(0,200,232,0.5));
+}
+
+.hero-fullname {
+  font-family: var(--mono);
+  font-size: clamp(10px, 1.5vw, 14px);
+  letter-spacing: 4px;
+  color: var(--accent);
+  margin-top: 12px;
+  margin-bottom: 8px;
+  opacity: 0.8;
+}
+
+.hero-tagline {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 36px;
+}
+
+.hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 4px;
+  color: var(--accent);
+  text-decoration: none;
+  text-transform: uppercase;
+  border: 1px solid var(--accent);
+  padding: 12px 28px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+.hero-cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+  z-index: -1;
+}
+.hero-cta:hover { color: var(--bg); }
+.hero-cta:hover::before { transform: scaleX(1); }
+
+.hero-skip {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  background: none;
+  border: 1px solid var(--border2);
+  padding: 6px 12px;
+  cursor: pointer;
+  letter-spacing: 2px;
+  z-index: 10;
+  transition: all 0.2s;
+}
+.hero-skip:hover { color: var(--accent); border-color: var(--accent); }
+
+.hero-scroll-hint {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.6s;
+  animation: scrollBounce 2s ease-in-out infinite;
+}
+.hero-scroll-hint.visible { opacity: 0.5; }
+.hero-scroll-hint span {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 3px;
+}
+.hero-scroll-hint svg { color: var(--accent); }
+
+@keyframes scrollBounce {
+  0%,100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(6px); }
+}
+
+/* ═══════════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════════ */
+header {
+  position: relative;
+  z-index: 10;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(0,200,232,0.05) 0%, transparent 100%);
+  padding: 0 40px;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0 12px;
+  border-bottom: 1px solid var(--border2);
+}
+
+.sys-id {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.status-bar {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.status-dot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: pulse 2s infinite;
+}
+.dot.amber { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+
+.header-main {
+  padding: 40px 0 36px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 32px;
+  align-items: center;
+}
+
+.header-logo-svg {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+}
+
+.main-title { line-height: 1; }
+
+.main-title .acronym {
+  display: block;
+  font-family: var(--head);
+  font-size: clamp(48px, 6vw, 88px);
+  font-weight: 700;
+  letter-spacing: -2px;
+  line-height: 0.9;
+  background: linear-gradient(135deg, var(--accent), #40E0F0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 30px rgba(0,200,232,0.5));
+}
+
+.main-title .subtitle-text {
+  display: block;
+  font-family: var(--mono);
+  font-size: clamp(10px, 1.1vw, 14px);
+  font-weight: 400;
+  letter-spacing: 4px;
+  color: var(--accent);
+  margin-top: 10px;
+}
+
+.header-meta {
+  text-align: right;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 2.1;
+}
+.header-meta span { display: block; }
+.header-meta .val { color: var(--accent); }
+
+/* ═══════════════════════════════════════════════
+   NAV
+═══════════════════════════════════════════════ */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(5,10,14,0.95);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 40px;
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+}
+
+nav a {
+  font-family: var(--head);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-decoration: none;
+  padding: 16px 20px;
+  border-bottom: 2px solid transparent;
+  transition: all 0.25s;
+  white-space: nowrap;
+}
+nav a:hover,
+nav a.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* ═══════════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════════════ */
+main {
+  position: relative;
+  z-index: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 40px 80px;
+}
+
+section {
+  padding: 80px 0;
+  border-bottom: 1px solid var(--border2);
+}
+
+.section-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 5px;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-label::after {
+  content: '';
+  flex: 1;
+  max-width: 60px;
+  height: 1px;
+  background: var(--accent);
+  opacity: 0.4;
+}
+
+.section-title {
+  font-family: var(--head);
+  font-size: clamp(28px, 4vw, 52px);
+  font-weight: 700;
+  color: var(--text-bright);
+  letter-spacing: -1px;
+  line-height: 1;
+  margin-bottom: 32px;
+}
+
+/* ═══════════════════════════════════════════════
+   OVERVIEW
+═══════════════════════════════════════════════ */
+.overview-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 40px;
+  align-items: start;
+}
+
+.overview-text p {
+  font-size: 15px;
+  margin-bottom: 20px;
+  color: var(--text);
+  max-width: 680px;
+}
+.overview-text p:first-child {
+  font-size: 17px;
+  color: var(--text-bright);
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+/* Concept Image */
+.concept-image-wrap {
+  position: relative;
+  margin-bottom: 24px;
+}
+.concept-image-wrap img {
+  width: 100%;
+  display: block;
+  border: 1px solid var(--border);
+  filter: brightness(0.88) contrast(1.08) saturate(0.85);
+  box-shadow: 0 0 40px rgba(0,200,232,0.12), 0 0 0 1px rgba(0,200,232,0.1);
+  transition: filter 0.3s;
+}
+.concept-image-wrap:hover img {
+  filter: brightness(0.96) contrast(1.05) saturate(0.95);
+}
+/* Corner brackets */
+.concept-image-wrap::before,
+.concept-image-wrap::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  z-index: 2;
+}
+.concept-image-wrap::before {
+  top: -1px; left: -1px;
+  border-top: 2px solid var(--accent);
+  border-left: 2px solid var(--accent);
+}
+.concept-image-wrap::after {
+  bottom: -1px; right: -1px;
+  border-bottom: 2px solid var(--accent);
+  border-right: 2px solid var(--accent);
+}
+.img-caption {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-top: 8px;
+  padding-left: 2px;
+}
+
+/* ═══════════════════════════════════════════════
+   HUD PANEL (Overview right side)
+═══════════════════════════════════════════════ */
+.hud-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.hud-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+}
+
+.hud-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+.hud-tab {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 12px 18px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  flex: 1;
+  text-align: center;
+}
+.hud-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.hud-pane { display: none; }
+.hud-pane.active { display: block; }
+
+/* Specs pane */
+.specs-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--accent);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.specs-header .blink {
+  width: 6px; height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: pulse 1s infinite;
+}
+
+.spec-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--border2);
+  gap: 12px;
+}
+.spec-row:last-child { border-bottom: none; }
+.spec-key {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.spec-val {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--accent);
+  text-align: right;
+}
+
+/* Atmospheric pane */
+.atm-header {
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.atm-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--accent);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+.atm-live {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--green);
+  letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.atm-live-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+  animation: pulse 1.5s infinite;
+}
+
+.atm-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 18px;
+  border-bottom: 1px solid var(--border2);
+  gap: 12px;
+}
+.atm-row:last-child { border-bottom: none; }
+.atm-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+  width: 60px;
+}
+.atm-bar-wrap {
+  flex: 1;
+  height: 3px;
+  background: var(--border2);
+  position: relative;
+  overflow: hidden;
+}
+.atm-bar {
+  height: 100%;
+  background: var(--accent);
+  transition: width 1.2s ease;
+}
+.atm-val {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--accent);
+  text-align: right;
+  width: 80px;
+  transition: color 0.3s;
+}
+.atm-val.updated {
+  color: var(--green);
+}
+
+.atm-stability {
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.atm-stability-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.atm-stability-val {
+  font-family: var(--head);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--green);
+}
+
+/* ═══════════════════════════════════════════════
+   CALLOUT
+═══════════════════════════════════════════════ */
+.callout {
+  background: rgba(0,200,232,0.05);
+  border: 1px solid rgba(0,200,232,0.3);
+  padding: 20px 24px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  margin-top: 24px;
+}
+.callout-icon { font-size: 18px; flex-shrink: 0; margin-top: 2px; }
+.callout-title {
+  font-family: var(--head);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+.callout-text { font-size: 13px; color: var(--text-dim); line-height: 1.7; }
+
+/* ═══════════════════════════════════════════════
+   CAPABILITY CARDS
+═══════════════════════════════════════════════ */
+.cap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 2px;
+  background: var(--border2);
+  border: 1px solid var(--border2);
+}
+
+.cap-card {
+  background: var(--panel);
+  padding: 28px 24px;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.25s;
+}
+.cap-card:hover { background: var(--panel2); }
+.cap-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 3px;
+  height: 100%;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+.cap-card:hover::before { opacity: 1; }
+.cap-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 30%, rgba(0,200,232,0.04), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.cap-card:hover::after { opacity: 1; }
+
+.cap-icon {
+  width: 36px; height: 36px;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  font-size: 16px;
+  color: var(--accent);
+  position: relative;
+}
+.cap-icon::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  background: var(--accent-dim);
+}
+.cap-title {
+  font-family: var(--head);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-bright);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.cap-desc {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.65;
+}
+
+/* ═══════════════════════════════════════════════
+   TIMELINE
+═══════════════════════════════════════════════ */
+.timeline-wrap {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0;
+  margin-top: 48px;
+}
+
+.timeline-line {
+  position: absolute;
+  top: 22px;
+  left: calc(100% / 12);
+  right: calc(100% / 12);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.3;
+  z-index: 0;
+}
+
+.timeline-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.timeline-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  background: var(--bg);
+  box-shadow: 0 0 12px rgba(0,200,232,0.5);
+  margin-bottom: 16px;
+  flex-shrink: 0;
+  position: relative;
+  transition: all 0.3s;
+}
+.timeline-dot::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: var(--accent);
+  transform: scale(0);
+  transition: transform 0.3s;
+}
+.timeline-item:hover .timeline-dot::after { transform: scale(1); }
+
+.timeline-cycle {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--accent);
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+}
+
+.timeline-event {
+  font-family: var(--head);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-bright);
+  line-height: 1.3;
+  margin-bottom: 6px;
+}
+
+.timeline-detail {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+/* ═══════════════════════════════════════════════
+   UNIT SECTIONS
+═══════════════════════════════════════════════ */
+.unit-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 24px;
+  align-items: center;
+  padding: 32px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  margin-bottom: 2px;
+  position: relative;
+  overflow: hidden;
+}
+.unit-header::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+}
+
+.unit-badge {
+  width: 80px; height: 80px;
+  border: 2px solid var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--head);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+  position: relative;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 20px var(--accent-dim), 0 0 20px var(--accent-dim);
+  transition: box-shadow 0.3s;
+}
+.unit-badge:hover {
+  box-shadow: inset 0 0 30px rgba(0,200,232,0.2), 0 0 30px rgba(0,200,232,0.3);
+}
+.unit-badge::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 1px solid var(--accent);
+  opacity: 0.3;
+}
+
+.unit-name {
+  font-family: var(--head);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-bright);
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+.unit-fullname {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 2px;
+  margin-top: 6px;
+}
+
+.unit-status {
+  text-align: right;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 2.1;
+}
+.unit-status .active { color: var(--green); }
+
+/* ═══════════════════════════════════════════════
+   VARIANT CARDS
+═══════════════════════════════════════════════ */
+.variant-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  background: var(--border2);
+  margin-bottom: 2px;
+}
+
+.variant-card {
+  background: var(--panel);
+  padding: 28px;
+  border-left: 3px solid transparent;
+  transition: background 0.2s;
+}
+.variant-card:hover { background: var(--panel2); }
+.variant-card.scout    { border-left-color: var(--accent); }
+.variant-card.pathfinder { border-left-color: var(--amber); }
+
+.variant-tag {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 4px;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.variant-card.pathfinder .variant-tag { color: var(--amber); }
+
+.variant-name {
+  font-family: var(--head);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-bright);
+  margin-bottom: 14px;
+}
+
+/* Data list */
+.data-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.data-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+}
+.data-list li::before {
+  content: '▸';
+  color: var(--accent);
+  flex-shrink: 0;
+  font-size: 10px;
+}
+.variant-card.pathfinder .data-list li::before { color: var(--amber); }
+
+/* ═══════════════════════════════════════════════
+   METRICS STRIP
+═══════════════════════════════════════════════ */
+.metrics-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+  background: var(--border2);
+  margin-bottom: 2px;
+}
+
+.metric-box {
+  background: var(--panel);
+  padding: 24px;
+  text-align: center;
+  transition: background 0.2s;
+  cursor: default;
+}
+.metric-box:hover { background: var(--panel2); }
+
+.metric-val {
+  font-family: var(--head);
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 6px;
+  display: block;
+}
+.metric-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* ═══════════════════════════════════════════════
+   TEXT BLOCK
+═══════════════════════════════════════════════ */
+.text-block {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  padding: 28px 32px;
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.8;
+}
+.text-block p { margin-bottom: 16px; }
+.text-block p:last-child { margin-bottom: 0; }
+
+/* ═══════════════════════════════════════════════
+   INDICATORS
+═══════════════════════════════════════════════ */
+.indicator-table {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--border2);
+  border: 1px solid var(--border2);
+}
+
+.indicator-row {
+  display: grid;
+  grid-template-columns: 60px 140px 1fr;
+  align-items: stretch;
+  background: var(--panel);
+  transition: background 0.2s;
+}
+.indicator-row:hover { background: var(--panel2); }
+
+.ind-color {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+}
+.ind-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  animation: pulse 2.5s infinite;
+}
+.ind-dot.blue   { background:#00C8E8; box-shadow:0 0 10px #00C8E8; }
+.ind-dot.green  { background:#20E080; box-shadow:0 0 10px #20E080; }
+.ind-dot.yellow { background:#E0D020; box-shadow:0 0 10px #E0D020; animation-delay:0.3s; }
+.ind-dot.orange { background:#E07820; box-shadow:0 0 10px #E07820; animation-delay:0.6s; }
+.ind-dot.red    { background:#E04040; box-shadow:0 0 10px #E04040; animation-delay:0.9s; }
+
+.ind-name {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text);
+  padding: 0 20px;
+  border-left: 1px solid var(--border2);
+  border-right: 1px solid var(--border2);
+  display: flex;
+  align-items: center;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.ind-desc {
+  font-size: 13px;
+  color: var(--text-dim);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+}
+
+/* ═══════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════ */
+.h-divider {
+  height: 1px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+  margin: 32px 0;
+  opacity: 0.3;
+}
+
+.hl       { color: var(--accent); }
+.hl-amber { color: var(--amber); }
+.hl-green { color: var(--green); }
+
+/* ═══════════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════════ */
+footer {
+  position: relative;
+  z-index: 1;
+  border-top: 1px solid var(--border);
+  padding: 40px 40px 32px;
+  background: linear-gradient(0deg, rgba(0,200,232,0.03) 0%, transparent 100%);
+}
+
+.footer-quote {
+  text-align: center;
+  margin-bottom: 32px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--border2);
+}
+.footer-quote blockquote {
+  font-family: var(--body);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--text);
+  max-width: 680px;
+  margin: 0 auto;
+  line-height: 1.7;
+  font-weight: 300;
+}
+.footer-quote cite {
+  display: block;
+  margin-top: 12px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-style: normal;
+  color: var(--accent);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-id {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 3px;
+}
+
+.footer-sig {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  text-align: right;
+}
+.footer-sig span { color: var(--accent); }
+
+/* ═══════════════════════════════════════════════
+   GSAP INITIAL STATES (hidden before reveal)
+═══════════════════════════════════════════════ */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+}
+.reveal-left {
+  opacity: 0;
+  transform: translateX(-24px);
+}
+.reveal-right {
+  opacity: 0;
+  transform: translateX(24px);
+}
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════ */
+@media (max-width: 1100px) {
+  .overview-grid { grid-template-columns: 1fr 320px; }
+}
+
+@media (max-width: 900px) {
+  header, nav, main, footer { padding-left: 20px; padding-right: 20px; }
+  .header-main { grid-template-columns: auto 1fr; }
+  .header-meta { display: none; }
+  .overview-grid { grid-template-columns: 1fr; }
+  .variant-grid { grid-template-columns: 1fr; }
+  .metrics-strip { grid-template-columns: repeat(2, 1fr); }
+  .unit-header { grid-template-columns: auto 1fr; }
+  .unit-status { display: none; }
+  .indicator-row { grid-template-columns: 50px 110px 1fr; }
+  .timeline-wrap { grid-template-columns: 1fr 1fr 1fr; row-gap: 40px; }
+  .timeline-line { display: none; }
+}
+
+@media (max-width: 600px) {
+  .hero-acronym { font-size: 56px; }
+  .boot-terminal { font-size: 11px; padding: 18px 16px; }
+  .timeline-wrap { grid-template-columns: 1fr 1fr; }
+  .metrics-strip { grid-template-columns: repeat(2, 1fr); }
+  .indicator-row { grid-template-columns: 44px 90px 1fr; }
+  .ind-desc { font-size: 12px; padding: 12px 14px; }
+  footer { padding-left: 20px; padding-right: 20px; }
+  .footer-bottom { flex-direction: column; gap: 16px; text-align: center; }
+  .footer-sig { text-align: center; }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   CUSTOM CURSOR
+═══════════════════════════════════════════════ */
+* { cursor: none !important; }
+
+#cursor-outer {
+  position: fixed;
+  width: 32px; height: 32px;
+  border: 1px solid rgba(0,200,232,0.6);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 99999;
+  transform: translate(-50%,-50%);
+  transition: width 0.2s, height 0.2s, border-color 0.2s, background 0.2s;
+  mix-blend-mode: screen;
+}
+#cursor-outer.hovering {
+  width: 48px; height: 48px;
+  border-color: var(--accent);
+  background: rgba(0,200,232,0.05);
+}
+#cursor-dot {
+  position: fixed;
+  width: 4px; height: 4px;
+  background: var(--accent);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 100000;
+  transform: translate(-50%,-50%);
+  box-shadow: 0 0 6px var(--accent);
+}
+/* Crosshair lines */
+#cursor-outer::before,
+#cursor-outer::after {
+  content: '';
+  position: absolute;
+  background: rgba(0,200,232,0.4);
+}
+#cursor-outer::before {
+  width: 1px; height: 10px;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+}
+#cursor-outer::after {
+  width: 10px; height: 1px;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* ═══════════════════════════════════════════════
+   GLITCH EFFECT
+═══════════════════════════════════════════════ */
+.glitch {
+  position: relative;
+}
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.glitch::before {
+  background: linear-gradient(135deg, #ff0066 0%, #ff0066 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: glitch-before 6s infinite;
+  clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%);
+}
+.glitch::after {
+  background: linear-gradient(135deg, #00ffff 0%, #00ffff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: glitch-after 6s infinite;
+  clip-path: polygon(0 65%, 100% 65%, 100% 100%, 0 100%);
+}
+@keyframes glitch-before {
+  0%,88%,91%,100% { transform: none; opacity: 0; }
+  89% { transform: translateX(-3px); opacity: 0.7; }
+  90% { transform: translateX(3px); opacity: 0.7; }
+}
+@keyframes glitch-after {
+  0%,88%,91%,100% { transform: none; opacity: 0; }
+  89% { transform: translateX(3px); opacity: 0.7; }
+  90% { transform: translateX(-3px); opacity: 0.7; }
+}
+
+/* ═══════════════════════════════════════════════
+   HERO COORDINATES
+═══════════════════════════════════════════════ */
+.hero-coords {
+  position: absolute;
+  bottom: 32px;
+  left: 32px;
+  z-index: 2;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 2px;
+  line-height: 1.8;
+  opacity: 0;
+  transition: opacity 1s;
+  text-align: left;
+}
+.hero-coords.visible { opacity: 0.5; }
+.hero-coords span { display: block; }
+.hero-coords .coord-val { color: var(--accent); opacity: 0.7; }
+
+/* ═══════════════════════════════════════════════
+   IMAGE SCANNER EFFECT
+═══════════════════════════════════════════════ */
+.concept-image-wrap {
+  overflow: hidden;
+}
+.concept-image-wrap .scanner-line {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(0,200,232,0.8), transparent);
+  z-index: 3;
+  opacity: 0;
+  pointer-events: none;
+}
+.concept-image-wrap:hover .scanner-line {
+  opacity: 1;
+  animation: scan-down 1.5s ease-in-out forwards;
+}
+@keyframes scan-down {
+  0%   { top: -2px; opacity: 1; }
+  100% { top: 100%; opacity: 0.3; }
+}
+
+/* ═══════════════════════════════════════════════
+   SECTION GLOW ON ENTER
+═══════════════════════════════════════════════ */
+.section-glow {
+  position: relative;
+}
+.section-glow::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -40px; right: -40px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0,200,232,0.6), transparent);
+  transform: scaleX(0);
+  transition: transform 0.8s ease;
+}
+.section-glow.glow-active::before {
+  transform: scaleX(1);
+}
+
+/* ═══════════════════════════════════════════════
+   SYSTEM LOG
+═══════════════════════════════════════════════ */
+#syslog {
+  padding: 80px 0;
+}
+.syslog-wrap {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.syslog-wrap::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--green), transparent);
+}
+.syslog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.syslog-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--green);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+.syslog-badge {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.syslog-badge-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+  animation: pulse 1.5s infinite;
+}
+.syslog-body {
+  height: 260px;
+  overflow: hidden;
+  padding: 12px 0;
+  position: relative;
+}
+.syslog-body::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 60px;
+  background: linear-gradient(0deg, var(--panel), transparent);
+  pointer-events: none;
+}
+.syslog-entry {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 3px 20px;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.6;
+  border-left: 2px solid transparent;
+  transition: background 0.2s;
+}
+.syslog-entry:hover { background: rgba(0,200,232,0.03); }
+.syslog-time { color: var(--text-dim); flex-shrink: 0; font-size: 10px; }
+.syslog-type { flex-shrink: 0; font-size: 9px; letter-spacing: 1px; width: 52px; }
+.syslog-type.info  { color: var(--accent); }
+.syslog-type.warn  { color: var(--amber); }
+.syslog-type.ok    { color: var(--green); }
+.syslog-type.crit  { color: var(--red); }
+.syslog-msg { color: var(--text-dim); }
+.syslog-msg .val { color: var(--text); }
+
+/* UPTIME in header */
+.uptime-counter {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.uptime-counter .uptime-val { color: var(--green); font-weight: 400; }
 </style>
 </head>
 <body>
+<!-- Custom cursor elements -->
+<div id="cursor-outer"></div>
+<div id="cursor-dot"></div>
 
-<!-- HEADER -->
+<!-- ═══════════════════════════════ HERO ═══════════════════════════════ -->
+<section id="hero" aria-label="Inicialização do sistema">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-bg-image" role="presentation"></div>
+  <div class="hero-overlay"></div>
+
+  <button class="hero-skip" id="btn-skip" aria-label="Pular animação de boot">SKIP ▸</button>
+
+  <div class="hero-content">
+    <!-- Boot Terminal -->
+    <div class="boot-terminal" id="boot-terminal" aria-live="polite">
+      <span class="boot-cursor" id="boot-cursor"></span>
+    </div>
+
+    <!-- Title (revealed after boot) -->
+    <div class="hero-title-wrap" id="hero-title">
+      <div class="hero-logo">
+        <svg class="header-logo-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" width="72" height="72" aria-hidden="true">
+          <polygon points="32,4 60,56 4,56" fill="none" stroke="#00C8E8" stroke-width="1.5" opacity="0.9"/>
+          <polygon points="32,14 52,50 12,50" fill="none" stroke="#00C8E8" stroke-width="0.8" opacity="0.4"/>
+          <circle cx="32" cy="38" r="5" fill="none" stroke="#00C8E8" stroke-width="1.5"/>
+          <circle cx="32" cy="38" r="2" fill="#00C8E8" opacity="0.8"/>
+          <line x1="32" y1="14" x2="32" y2="33" stroke="#00C8E8" stroke-width="1" opacity="0.6"/>
+        </svg>
+      </div>
+      <div class="hero-acronym glitch" data-text="A.D.A.M.">A.D.A.M.</div>
+      <div class="hero-fullname">Atmospheric Diagnostic &amp; Analysis Module</div>
+      <div class="hero-tagline">Sistema Portátil de Análise Ambiental — Sapiens II</div>
+      <a href="#overview" class="hero-cta" aria-label="Acessar dados do sistema">
+        ↓ ACESSAR DADOS
+      </a>
+    </div>
+  </div>
+
+  <div class="hero-scroll-hint" id="scroll-hint" aria-hidden="true">
+    <svg width="16" height="24" viewBox="0 0 16 24" fill="none">
+      <rect x="1" y="1" width="14" height="22" rx="7" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+      <circle cx="8" cy="7" r="2.5" fill="currentColor" opacity="0.7"/>
+    </svg>
+    <span>SCROLL</span>
+  </div>
+
+  <!-- Hero coordinates -->
+  <div class="hero-coords" id="hero-coords" aria-hidden="true">
+    <span>LAT: <span class="coord-val" id="coord-lat">-23.547°</span></span>
+    <span>LON: <span class="coord-val" id="coord-lon">142.381°</span></span>
+    <span>ALT: <span class="coord-val" id="coord-alt">847 m</span></span>
+    <span>SETOR: <span class="coord-val">SAPIENS-II / PROA</span></span>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ HEADER ═══════════════════════════════ -->
 <header>
   <div class="header-top">
     <span class="sys-id">SAPIENS II — SISTEMA DE SUPORTE TÉCNICO INDEPENDENTE // CLASSIFICAÇÃO: AUXILIAR</span>
     <div class="status-bar">
+      <div class="uptime-counter">UPTIME: <span class="uptime-val" id="uptime-display">000:00:00</span></div>
       <div class="status-dot"><div class="dot"></div>SISTEMA ATIVO</div>
       <div class="status-dot"><div class="dot amber"></div>MODO: CAMPO</div>
     </div>
   </div>
   <div class="header-main">
+    <svg class="header-logo-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <polygon points="32,4 60,56 4,56" fill="none" stroke="#00C8E8" stroke-width="1.5" opacity="0.9"/>
+      <polygon points="32,14 52,50 12,50" fill="none" stroke="#00C8E8" stroke-width="0.8" opacity="0.4"/>
+      <circle cx="32" cy="38" r="5" fill="none" stroke="#00C8E8" stroke-width="1.5"/>
+      <circle cx="32" cy="38" r="2" fill="#00C8E8" opacity="0.8"/>
+      <line x1="32" y1="14" x2="32" y2="33" stroke="#00C8E8" stroke-width="1" opacity="0.6"/>
+    </svg>
     <div class="main-title">
       <span class="acronym">A.D.A.M.</span>
       <span class="subtitle-text">Atmospheric Diagnostic &amp; Analysis Module</span>
@@ -804,113 +1639,154 @@
   </div>
 </header>
 
-<!-- NAV -->
-<nav>
-  <a href="#overview">Visão Geral</a>
-  <a href="#capacidades">Capacidades</a>
-  <a href="#mite">Unidade MITE</a>
-  <a href="#orbis">Unidade ORBIS</a>
-  <a href="#indicadores">Indicadores</a>
+<!-- ═══════════════════════════════ NAV ═══════════════════════════════ -->
+<nav aria-label="Navegação principal">
+  <a href="#overview"    id="nav-overview">Visão Geral</a>
+  <a href="#capacidades" id="nav-capacidades">Capacidades</a>
+  <a href="#timeline"    id="nav-timeline">Linha do Tempo</a>
+  <a href="#mite"        id="nav-mite">Unidade MITE</a>
+  <a href="#orbis"       id="nav-orbis">Unidade ORBIS</a>
+  <a href="#indicadores" id="nav-indicadores">Indicadores</a>
 </nav>
 
 <main>
 
-  <!-- OVERVIEW -->
+  <!-- ════ 01 · VISÃO GERAL ════ -->
   <section id="overview">
-    <div class="section-label">01 — Visão Geral</div>
-    <h2 class="section-title">O Sistema A.D.A.M.</h2>
+    <div class="section-label reveal">01 — Visão Geral</div>
+    <h2 class="section-title reveal">O Sistema A.D.A.M.</h2>
+
     <div class="overview-grid">
       <div class="overview-text">
-        <p>Plataforma integrada de diagnóstico atmosférico, análise estrutural e gerenciamento de sobrevivência em ambientes hostis, desenvolvida independentemente por Laveine Addams nos anos posteriores ao <span class="hl">Grande Acidente da Sapiens II</span>.</p>
-        <p>Originalmente concebido como um bracelete técnico auxiliar para manutenção dos Sistemas de Suporte à Vida da Arca, o equipamento evoluiu para uma das ferramentas pessoais mais complexas já produzidas fora dos protocolos oficiais da <span class="hl">AEGIS</span>.</p>
-        <p>Fisicamente acoplado ao antebraço esquerdo através de estrutura metálica semiarticulada em liga de titânio-carbono, o módulo projeta interfaces holográficas compactas de baixa emissão luminosa, operando via feedbacks táteis e pulsos vibracionais discretos — reduzindo dependência sonora em ambientes de alto ruído operacional.</p>
-        <p>Seu núcleo é alimentado por uma IA auxiliar limitada desenvolvida a partir de fragmentos de antigos protocolos de engenharia descartados pela AEGIS — sem autoridade sobre sistemas da nave, mas com <span class="hl">capacidade adaptativa consideravelmente avançada</span> para um módulo independente.</p>
+        <p class="reveal">Plataforma integrada de diagnóstico atmosférico, análise estrutural e gerenciamento de sobrevivência em ambientes hostis, desenvolvida independentemente por Laveine Addams nos anos posteriores ao <span class="hl">Grande Acidente da Sapiens II</span>.</p>
+        <p class="reveal">Originalmente concebido como um bracelete técnico auxiliar para manutenção dos Sistemas de Suporte à Vida da Arca, o equipamento evoluiu para uma das ferramentas pessoais mais complexas já produzidas fora dos protocolos oficiais da <span class="hl">AEGIS</span>.</p>
+        <p class="reveal">Fisicamente acoplado ao antebraço esquerdo através de estrutura metálica semiarticulada em liga de titânio-carbono, o módulo projeta interfaces holográficas compactas de baixa emissão luminosa, operando via feedbacks táteis e pulsos vibracionais discretos.</p>
+        <p class="reveal">Seu núcleo é alimentado por uma IA auxiliar limitada desenvolvida a partir de fragmentos de antigos protocolos de engenharia descartados pela AEGIS — sem autoridade sobre sistemas da nave, mas com <span class="hl">capacidade adaptativa consideravelmente avançada</span> para um módulo independente.</p>
 
-        <div class="callout">
+        <div class="callout reveal">
           <div class="callout-icon">⚡</div>
           <div>
             <div class="callout-title">Detecção Antecipada</div>
-            <div class="callout-text">Em registros internos não oficializados, o A.D.A.M. identificou vazamentos atmosféricos, corrosões internas e falhas de pressão com antecedência média de <strong>20 a 40 minutos</strong> em relação aos alertas formais da AEGIS.</div>
+            <div class="callout-text">Em registros internos não oficializados, o A.D.A.M. identificou vazamentos atmosféricos, corrosões internas e falhas de pressão com antecedência média de <strong style="color:var(--accent)">20 a 40 minutos</strong> em relação aos alertas formais da AEGIS.</div>
           </div>
         </div>
       </div>
 
-      <div class="specs-panel">
-        <div class="specs-header">
-          PARÂMETROS DO SISTEMA
-          <div class="blink"></div>
+      <!-- HUD Panel -->
+      <div class="hud-panel reveal-right">
+        <div class="hud-tabs" role="tablist">
+          <button class="hud-tab active" id="tab-specs" role="tab" aria-selected="true"  aria-controls="pane-specs"  onclick="switchTab('specs')">PARÂMETROS</button>
+          <button class="hud-tab"        id="tab-atm"   role="tab" aria-selected="false" aria-controls="pane-atm"    onclick="switchTab('atm')">ATMOSFÉRICO</button>
         </div>
-        <div class="spec-row">
-          <span class="spec-key">Posição</span>
-          <span class="spec-val">Antebraço Esquerdo</span>
+
+        <!-- Specs Pane -->
+        <div class="hud-pane active" id="pane-specs" role="tabpanel">
+          <div class="specs-header">PARÂMETROS DO SISTEMA <div class="blink"></div></div>
+          <div class="spec-row"><span class="spec-key">Posição</span><span class="spec-val">Antebraço Esquerdo</span></div>
+          <div class="spec-row"><span class="spec-key">Material</span><span class="spec-val">Ti-C Reutilizado</span></div>
+          <div class="spec-row"><span class="spec-key">Peso Total</span><span class="spec-val">1,76 kg</span></div>
+          <div class="spec-row"><span class="spec-key">Comprimento</span><span class="spec-val">29,6 cm</span></div>
+          <div class="spec-row"><span class="spec-key">Interface</span><span class="spec-val">Holográfica / Tátil</span></div>
+          <div class="spec-row"><span class="spec-key">IA Core</span><span class="spec-val">Auxiliar Limitada</span></div>
+          <div class="spec-row"><span class="spec-key">Autonomia</span><span class="spec-val">72h (Uso Ativo)</span></div>
+          <div class="spec-row"><span class="spec-key">Blindagem</span><span class="spec-val">Térmica Parcial</span></div>
+          <div class="spec-row"><span class="spec-key">Aprendizado</span><span class="spec-val">Contínuo / Campo</span></div>
+          <div class="spec-row"><span class="spec-key">Drones</span><span class="spec-val">MITE + ORBIS</span></div>
+          <div class="spec-row"><span class="spec-key">Classificação</span><span class="spec-val">Não-Oficial</span></div>
         </div>
-        <div class="spec-row">
-          <span class="spec-key">Material</span>
-          <span class="spec-val">Ti-C Reutilizado</span>
+
+        <!-- Atmospheric Pane -->
+        <div class="hud-pane" id="pane-atm" role="tabpanel">
+          <div class="atm-header">
+            <span class="atm-title">ANÁLISE ATMOSFÉRICA</span>
+            <span class="atm-live"><span class="atm-live-dot"></span>AO VIVO</span>
+          </div>
+          <div class="atm-row">
+            <span class="atm-label">O₂</span>
+            <div class="atm-bar-wrap"><div class="atm-bar" id="bar-o2" style="width:20.97%"></div></div>
+            <span class="atm-val" id="val-o2">20.97%</span>
+          </div>
+          <div class="atm-row">
+            <span class="atm-label">CO₂</span>
+            <div class="atm-bar-wrap"><div class="atm-bar" id="bar-co2" style="width:0.4%;background:var(--amber)"></div></div>
+            <span class="atm-val" id="val-co2" style="color:var(--amber)">0.04%</span>
+          </div>
+          <div class="atm-row">
+            <span class="atm-label">N₂</span>
+            <div class="atm-bar-wrap"><div class="atm-bar" id="bar-n2" style="width:78.91%;background:var(--text-dim)"></div></div>
+            <span class="atm-val" id="val-n2" style="color:var(--text)">78.91%</span>
+          </div>
+          <div class="atm-row">
+            <span class="atm-label">TEMP</span>
+            <div class="atm-bar-wrap"><div class="atm-bar" id="bar-temp" style="width:45%;background:var(--orange)"></div></div>
+            <span class="atm-val" id="val-temp" style="color:var(--orange)">22.3°C</span>
+          </div>
+          <div class="atm-row">
+            <span class="atm-label">PRESS</span>
+            <div class="atm-bar-wrap"><div class="atm-bar" id="bar-press" style="width:51%;background:var(--accent)"></div></div>
+            <span class="atm-val" id="val-press">1.02 atm</span>
+          </div>
+          <div class="atm-row">
+            <span class="atm-label">RAD</span>
+            <div class="atm-bar-wrap"><div class="atm-bar" id="bar-rad" style="width:9%;background:var(--green)"></div></div>
+            <span class="atm-val" id="val-rad" style="color:var(--green)">0.18 mSv/h</span>
+          </div>
+          <div class="atm-row">
+            <span class="atm-label">HUMID</span>
+            <div class="atm-bar-wrap"><div class="atm-bar" id="bar-humid" style="width:43.7%;background:var(--accent)"></div></div>
+            <span class="atm-val" id="val-humid">43.7%</span>
+          </div>
+          <div class="atm-stability">
+            <span class="atm-stability-label">ESTABILIDADE GERAL</span>
+            <span class="atm-stability-val" id="val-stability">94%</span>
+          </div>
         </div>
-        <div class="spec-row">
-          <span class="spec-key">Interface</span>
-          <span class="spec-val">Holográfica / Tátil</span>
-        </div>
-        <div class="spec-row">
-          <span class="spec-key">IA Core</span>
-          <span class="spec-val">Auxiliar Limitada</span>
-        </div>
-        <div class="spec-row">
-          <span class="spec-key">Autonomia</span>
-          <span class="spec-val">Independente</span>
-        </div>
-        <div class="spec-row">
-          <span class="spec-key">Blindagem</span>
-          <span class="spec-val">Térmica Parcial</span>
-        </div>
-        <div class="spec-row">
-          <span class="spec-key">Aprendizado</span>
-          <span class="spec-val">Contínuo / Campo</span>
-        </div>
-        <div class="spec-row">
-          <span class="spec-key">Drones</span>
-          <span class="spec-val">MITE + ORBIS</span>
-        </div>
-        <div class="spec-row">
-          <span class="spec-key">Classificação</span>
-          <span class="spec-val">Não-Oficial</span>
-        </div>
+      </div>
+    </div>
+
+    <!-- Concept Image 1 (blueprint) -->
+    <div style="margin-top:48px">
+      <div class="concept-image-wrap reveal">
+        <div class="scanner-line"></div>
+        <img src="assets/images/adam-blueprint.png"
+             alt="Mapeamento técnico do A.D.A.M. — Blueprint detalhado com arquitetura interna, redes de integração, plataformas MITE e ORBIS"
+             loading="lazy">
+        <p class="img-caption">FIG. 01 — MAPEAMENTO DE PROJETO A.D.A.M. — VISÃO GERAL TÉCNICA // LAV-ADDAMS-001</p>
       </div>
     </div>
   </section>
 
-  <!-- CAPACIDADES -->
+  <!-- ════ 02 · CAPACIDADES ════ -->
   <section id="capacidades">
-    <div class="section-label">02 — Capacidades Operacionais</div>
-    <h2 class="section-title">Funções Integradas</h2>
+    <div class="section-label reveal">02 — Capacidades Operacionais</div>
+    <h2 class="section-title reveal">Funções Integradas</h2>
     <div class="cap-grid">
-      <div class="cap-card">
+      <div class="cap-card reveal">
         <div class="cap-icon">◈</div>
         <div class="cap-title">Diagnóstico Atmosférico</div>
         <div class="cap-desc">Análise multicamada em tempo real: composição gasosa, partículas tóxicas, risco microbiológico, níveis radioativos, pressão adaptativa e potencial corrosivo ambiental.</div>
       </div>
-      <div class="cap-card">
+      <div class="cap-card reveal">
         <div class="cap-icon">⬡</div>
         <div class="cap-title">Integridade Estrutural</div>
         <div class="cap-desc">Monitoramento contínuo de tensão estrutural, corrosão interna, falhas de pressão e microanomalias antes da emissão de alertas pela AEGIS.</div>
       </div>
-      <div class="cap-card">
+      <div class="cap-card reveal">
         <div class="cap-icon">◎</div>
         <div class="cap-title">Modelagem Preditiva</div>
         <div class="cap-desc">Geração de estimativas preliminares de habitabilidade planetária, necessidades de recalibração ambiental e viabilidade de implantação hidropônica.</div>
       </div>
-      <div class="cap-card">
+      <div class="cap-card reveal">
         <div class="cap-icon">▣</div>
         <div class="cap-title">Gestão de Sobrevivência</div>
         <div class="cap-desc">Protocolos adaptados de colonização extraplanetária altamente modificados para operações imediatas em cenários de decisão crítica em campo.</div>
       </div>
-      <div class="cap-card">
+      <div class="cap-card reveal">
         <div class="cap-icon">⌬</div>
         <div class="cap-title">Radiação &amp; Térmica</div>
         <div class="cap-desc">Leitura contínua de níveis de radiação, densidade microbiológica e estabilidade térmica com feedback tátil discreto em ambientes pressurizados.</div>
       </div>
-      <div class="cap-card">
+      <div class="cap-card reveal">
         <div class="cap-icon">⟁</div>
         <div class="cap-title">Aprendizado de Campo</div>
         <div class="cap-desc">Cada falha estrutural, variação atmosférica e instabilidade energética é armazenada e integrada ao banco de dados interno para reconhecimento futuro.</div>
@@ -918,12 +1794,60 @@
     </div>
   </section>
 
-  <!-- MITE -->
-  <section id="mite">
-    <div class="section-label">03 — Unidade Auxiliar</div>
-    <h2 class="section-title">Plataforma MITE</h2>
+  <!-- ════ 03 · LINHA DO TEMPO ════ -->
+  <section id="timeline">
+    <div class="section-label reveal">03 — Desenvolvimento</div>
+    <h2 class="section-title reveal">Linha do Tempo</h2>
+    <p class="reveal" style="font-family:var(--mono);font-size:11px;color:var(--text-dim);letter-spacing:2px;margin-bottom:0">// Ciclos de desenvolvimento independente — Pós-Grande Acidente da Sapiens II</p>
 
-    <div class="unit-header">
+    <div class="timeline-wrap" id="timeline-items">
+      <div class="timeline-line"></div>
+
+      <div class="timeline-item reveal">
+        <div class="timeline-dot"></div>
+        <div class="timeline-cycle">CICLO 233</div>
+        <div class="timeline-event">Protótipo Inicial</div>
+        <div class="timeline-detail">Bracelete técnico auxiliar para manutenção dos Sistemas de Suporte à Vida</div>
+      </div>
+      <div class="timeline-item reveal">
+        <div class="timeline-dot"></div>
+        <div class="timeline-cycle">CICLO 236</div>
+        <div class="timeline-event">Integração da IA Auxiliar</div>
+        <div class="timeline-detail">Fragmentos de protocolos descartados pela AEGIS incorporados ao núcleo</div>
+      </div>
+      <div class="timeline-item reveal">
+        <div class="timeline-dot"></div>
+        <div class="timeline-cycle">CICLO 240</div>
+        <div class="timeline-event">Criação do MITE-S</div>
+        <div class="timeline-detail">Primeira unidade aracnídea para infiltração em dutos e zonas inacessíveis</div>
+      </div>
+      <div class="timeline-item reveal">
+        <div class="timeline-dot"></div>
+        <div class="timeline-cycle">CICLO 243</div>
+        <div class="timeline-event">ORBIS-LITE &amp; Expansão</div>
+        <div class="timeline-detail">Plataforma científica esférica + expansão dos sensores atmosféricos</div>
+      </div>
+      <div class="timeline-item reveal">
+        <div class="timeline-dot"></div>
+        <div class="timeline-cycle">CICLO 246</div>
+        <div class="timeline-event">MITE-M &amp; ORBIS-EX</div>
+        <div class="timeline-detail">Variantes planetárias de longo alcance desenvolvidas com Connor Ross</div>
+      </div>
+      <div class="timeline-item reveal">
+        <div class="timeline-dot"></div>
+        <div class="timeline-cycle">CICLO 248</div>
+        <div class="timeline-event">Otimização Final</div>
+        <div class="timeline-detail">Protocolos autônomos, Caixa Preta e sistema de indicadores cromáticos</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════ 04 · MITE ════ -->
+  <section id="mite" class="section-glow">
+    <div class="section-label reveal">04 — Unidade Auxiliar</div>
+    <h2 class="section-title reveal">Plataforma MITE</h2>
+
+    <div class="unit-header reveal">
       <div class="unit-badge">MITE</div>
       <div>
         <div class="unit-name">Mobile Integrated Technical Explorer</div>
@@ -938,7 +1862,7 @@
     </div>
 
     <div class="variant-grid">
-      <div class="variant-card scout">
+      <div class="variant-card scout reveal-left">
         <div class="variant-tag">Variante S</div>
         <div class="variant-name">MITE-S "Scout"</div>
         <p style="font-size:13px;color:var(--text-dim);margin-bottom:16px;">Compacta (~40cm), operação interna na Sapiens II. Movimentação silenciosa e precisa em ambientes destruídos via microgarras eletrostáticas.</p>
@@ -951,7 +1875,7 @@
           <li>Zonas de difícil acesso estrutural</li>
         </ul>
       </div>
-      <div class="variant-card pathfinder">
+      <div class="variant-card pathfinder reveal-right">
         <div class="variant-tag" style="color:var(--amber)">Variante M</div>
         <div class="variant-name">MITE-M "Pathfinder"</div>
         <p style="font-size:13px;color:var(--text-dim);margin-bottom:16px;">Robusta (~1,2m), missões extraplanetárias. Reforço estrutural, maior capacidade energética e módulos adicionais de exploração ambiental.</p>
@@ -967,37 +1891,37 @@
     </div>
 
     <div class="metrics-strip">
-      <div class="metric-box">
-        <span class="metric-val">72h</span>
+      <div class="metric-box reveal">
+        <span class="metric-val" data-target="72" data-suffix="h">0h</span>
         <span class="metric-label">Autonomia Pathfinder</span>
       </div>
-      <div class="metric-box">
-        <span class="metric-val">120<span style="font-size:20px">km</span></span>
+      <div class="metric-box reveal">
+        <span class="metric-val" data-target="120" data-suffix="km">0km</span>
         <span class="metric-label">Alcance Máx. Campo</span>
       </div>
-      <div class="metric-box">
-        <span class="metric-val">40<span style="font-size:20px">cm</span></span>
+      <div class="metric-box reveal">
+        <span class="metric-val" data-target="40" data-suffix="cm">0cm</span>
         <span class="metric-label">Comp. Scout</span>
       </div>
-      <div class="metric-box">
-        <span class="metric-val">2</span>
+      <div class="metric-box reveal">
+        <span class="metric-val" data-target="2" data-suffix="">0</span>
         <span class="metric-label">Variantes Ativas</span>
       </div>
     </div>
 
-    <div class="text-block" style="margin-top:2px">
+    <div class="text-block reveal" style="margin-top:2px">
       <p>Ambas as variantes utilizam <span class="hl">núcleo energético híbrido de longa duração</span> alimentado por células de armazenamento térmico e microplacas fotovoltaicas adaptativas. Em ambientes planetários, a recarga ocorre por absorção solar direta, luz estelar intensa ou conversão térmica de ambientes superaquecidos.</p>
       <p>Os sistemas funcionais integrados incluem: micro-soldagem térmica, braços manipuladores de precisão, scanner estrutural, coleta de amostras, câmeras ópticas multiespectrais, leitura térmica, análise de tensão estrutural e protocolos básicos de contenção de emergência.</p>
     </div>
   </section>
 
-  <!-- ORBIS -->
-  <section id="orbis">
-    <div class="section-label">04 — Unidade Científica</div>
-    <h2 class="section-title">Plataforma ORBIS</h2>
+  <!-- ════ 05 · ORBIS ════ -->
+  <section id="orbis" class="section-glow">
+    <div class="section-label reveal">05 — Unidade Científica</div>
+    <h2 class="section-title reveal">Plataforma ORBIS</h2>
 
-    <div class="unit-header orbis-badge">
-      <div class="unit-badge" style="border-color:var(--green);color:var(--green);box-shadow:inset 0 0 20px var(--green-dim), 0 0 20px var(--green-dim)">ORBIS</div>
+    <div class="unit-header reveal" style="background:linear-gradient(135deg,var(--panel2),var(--panel));border-color:rgba(32,224,128,0.2)">
+      <div class="unit-badge" style="border-color:var(--green);color:var(--green);box-shadow:inset 0 0 20px var(--green-dim),0 0 20px var(--green-dim)">ORBIS</div>
       <div>
         <div class="unit-name">Orbital Recon &amp; Bio-Integrated Surveyor</div>
         <div class="unit-fullname">PLATAFORMA ESFÉRICA AUTÔNOMA DE RECONHECIMENTO CIENTÍFICO E ANÁLISE AMBIENTAL</div>
@@ -1011,20 +1935,20 @@
     </div>
 
     <div class="variant-grid">
-      <div class="variant-card scout" style="border-left-color:var(--green)">
+      <div class="variant-card scout reveal-left" style="border-left-color:var(--green)">
         <div class="variant-tag" style="color:var(--green)">Variante Lite</div>
         <div class="variant-name">ORBIS-LITE</div>
         <p style="font-size:13px;color:var(--text-dim);margin-bottom:16px;">Compacta (~20cm de diâmetro). Reconhecimento rápido e mapeamento interno. Extremamente veloz e silenciosa, sem contato físico constante com superfícies.</p>
-        <ul class="data-list" style="--accent:var(--green)">
-          <li>Alcance interno: ~20 km</li>
-          <li>Superfície aberta: ~10 km</li>
-          <li>Mapeamento tridimensional</li>
-          <li>Escaneamento térmico</li>
-          <li>Análise atmosférica rápida</li>
-          <li>Reconhecimento estrutural</li>
+        <ul class="data-list">
+          <li style="color:var(--text-dim)">Alcance interno: ~20 km</li>
+          <li style="color:var(--text-dim)">Superfície aberta: ~10 km</li>
+          <li style="color:var(--text-dim)">Mapeamento tridimensional</li>
+          <li style="color:var(--text-dim)">Escaneamento térmico</li>
+          <li style="color:var(--text-dim)">Análise atmosférica rápida</li>
+          <li style="color:var(--text-dim)">Reconhecimento estrutural</li>
         </ul>
       </div>
-      <div class="variant-card" style="border-left-color:var(--amber)">
+      <div class="variant-card reveal-right" style="border-left-color:var(--amber)">
         <div class="variant-tag" style="color:var(--amber)">Variante EX</div>
         <div class="variant-name">ORBIS-EX</div>
         <p style="font-size:13px;color:var(--text-dim);margin-bottom:16px;">Grande (~60cm de diâmetro). Exploração planetária profunda. Maior capacidade computacional, armazenamento avançado e módulos laboratoriais adicionais.</p>
@@ -1040,86 +1964,583 @@
     </div>
 
     <div class="metrics-strip" style="margin-top:2px">
-      <div class="metric-box">
-        <span class="metric-val">96h</span>
+      <div class="metric-box reveal">
+        <span class="metric-val" style="color:var(--green)" data-target="96" data-suffix="h">0h</span>
         <span class="metric-label">Autonomia EX</span>
       </div>
-      <div class="metric-box">
-        <span class="metric-val">300+<span style="font-size:16px">km</span></span>
+      <div class="metric-box reveal">
+        <span class="metric-val" style="color:var(--green)" data-target="300" data-suffix="km+">0km</span>
         <span class="metric-label">Alcance c/ Satélites</span>
       </div>
-      <div class="metric-box">
-        <span class="metric-val">60<span style="font-size:20px">cm</span></span>
+      <div class="metric-box reveal">
+        <span class="metric-val" style="color:var(--green)" data-target="60" data-suffix="cm">0cm</span>
         <span class="metric-label">Diâm. ORBIS-EX</span>
       </div>
-      <div class="metric-box">
-        <span class="metric-val" style="color:var(--amber)">⬛</span>
+      <div class="metric-box reveal">
+        <span class="metric-val" style="color:var(--amber)">■</span>
         <span class="metric-label">Caixa Preta Ativa</span>
       </div>
     </div>
 
-    <div class="callout" style="margin-top:2px;background:rgba(32,224,128,0.05);border-color:var(--green)">
+    <div class="callout reveal" style="margin-top:2px;background:rgba(32,224,128,0.04);border-color:rgba(32,224,128,0.35)">
       <div class="callout-icon">🔲</div>
       <div>
         <div class="callout-title" style="color:var(--green)">Núcleo de Persistência de Dados — "Caixa Preta"</div>
         <div class="callout-text">Módulo fisicamente isolado com blindagem reforçada e armazenamento redundante. Em caso de destruição parcial, compacta todos os dados coletados, ativa transmissor de emergência criptografado e emite sinais localizáveis pelo A.D.A.M. — permitindo recuperação de informações mesmo após <span style="color:var(--green)">perda operacional total da unidade</span>.</div>
       </div>
     </div>
+
+    <!-- Concept Image 2 (render) -->
+    <div style="margin-top:48px">
+      <div class="concept-image-wrap reveal">
+        <div class="scanner-line"></div>
+        <img src="assets/images/adam-render.png"
+             alt="Render fotorrealista do A.D.A.M. acoplado ao antebraço, exibindo interface holográfica, com unidades MITE e ORBIS ao fundo"
+             loading="lazy">
+        <p class="img-caption">FIG. 02 — A.D.A.M. v3.9.7 COM PLATAFORMAS AUXILIARES INTEGRADAS // RENDER TÉCNICO — LAVEINE ADDAMS</p>
+      </div>
+    </div>
   </section>
 
-  <!-- INDICADORES -->
+  <!-- ════ 06 · INDICADORES ════ -->
   <section id="indicadores">
-    <div class="section-label">05 — Protocolo de Status</div>
-    <h2 class="section-title">Sistema de Indicadores</h2>
-    <p style="font-size:14px;color:var(--text-dim);margin-bottom:32px;font-family:var(--mono)">// Padrão cromático compartilhado entre MITE e ORBIS para leitura operacional unificada</p>
+    <div class="section-label reveal">06 — Protocolo de Status</div>
+    <h2 class="section-title reveal">Sistema de Indicadores</h2>
+    <p class="reveal" style="font-size:13px;color:var(--text-dim);margin-bottom:32px;font-family:var(--mono);letter-spacing:2px">// Padrão cromático compartilhado entre MITE e ORBIS — leitura operacional unificada</p>
 
     <div class="indicator-table">
-      <div class="indicator-row">
+      <div class="indicator-row reveal">
         <div class="ind-color"><div class="ind-dot blue"></div></div>
         <div class="ind-name">AZUL</div>
         <div class="ind-desc">Operação estável. Monitoramento passivo ativo. Todos os sistemas dentro dos parâmetros nominais.</div>
       </div>
-      <div class="indicator-row">
+      <div class="indicator-row reveal">
         <div class="ind-color"><div class="ind-dot green"></div></div>
         <div class="ind-name">VERDE</div>
-        <div class="ind-desc">Ambiente seguro confirmado. Coleta ou análise concluída com sucesso. Dados validados.</div>
+        <div class="ind-desc">Ambiente seguro confirmado. Coleta ou análise concluída com sucesso. Dados validados e transmitidos.</div>
       </div>
-      <div class="indicator-row">
+      <div class="indicator-row reveal">
         <div class="ind-color"><div class="ind-dot yellow"></div></div>
         <div class="ind-name">AMARELO</div>
         <div class="ind-desc">Anomalia detectada. Necessidade de atenção estrutural ou ambiental. Análise adicional recomendada.</div>
       </div>
-      <div class="indicator-row">
+      <div class="indicator-row reveal">
         <div class="ind-color"><div class="ind-dot orange"></div></div>
         <div class="ind-name">LARANJA</div>
         <div class="ind-desc">Risco ambiental elevado. Dano operacional moderado detectado. Protocolo de contenção ativado.</div>
       </div>
-      <div class="indicator-row">
+      <div class="indicator-row reveal">
         <div class="ind-color"><div class="ind-dot red"></div></div>
         <div class="ind-name">VERMELHO</div>
         <div class="ind-desc">Falha crítica. Contaminação severa, ameaça biológica, risco de perda da unidade ou colapso operacional iminente.</div>
       </div>
     </div>
 
-    <div class="h-divider" style="margin-top:40px"></div>
+    <div class="h-divider" style="margin-top:48px"></div>
 
-    <div class="text-block">
+    <div class="text-block reveal">
       <p>Embora oficialmente classificados apenas como <span class="hl">equipamentos auxiliares de engenharia</span>, o A.D.A.M. e suas unidades complementares representam, na prática, extensões diretas da metodologia operacional de Laveine Addams.</p>
       <p>Todos os sistemas foram concebidos sob a mesma lógica funcional: <span class="hl">independência operacional, redundância técnica e sobrevivência adaptativa</span> diante de ambientes imprevisíveis. Dentro da Sapiens II, poucos engenheiros compreendem tão profundamente que a diferença entre continuar vivo e desaparecer no vazio frequentemente depende da capacidade de prever falhas antes que elas existam formalmente.</p>
     </div>
   </section>
 
+  <!-- ════ 07 · SYSTEM LOG ════ -->
+  <section id="syslog">
+    <div class="section-label reveal">07 — Registros Internos</div>
+    <h2 class="section-title reveal">Log de Operação</h2>
+    <div class="syslog-wrap reveal">
+      <div class="syslog-header">
+        <span class="syslog-title">TERMINAL DO A.D.A.M.</span>
+        <span class="syslog-badge"><div class="syslog-badge-dot"></div> GRAVANDO DADOS</span>
+      </div>
+      <div class="syslog-body" id="syslog-body">
+        <!-- Logs injected via JS -->
+      </div>
+    </div>
+  </section>
+
 </main>
 
+<!-- ═══════════════════════════════ FOOTER ═══════════════════════════════ -->
 <footer>
-  <div class="footer-id">
-    A.D.A.M. SYS // SAPIENS II // DOC REF: LAV-ADDAMS-001 // NÃO-OFICIAL
+  <div class="footer-quote">
+    <blockquote>
+      "Prever falhas antes que elas existam é a única forma de sobreviver ao desconhecido."
+      <cite>— Laveine Addams, Eng. Civil — Sapiens II</cite>
+    </blockquote>
   </div>
-  <div class="footer-sig">
-    DESENVOLVIDO POR <span>LAVEINE ADDAMS</span><br>
-    INDEPENDENTE DE PROTOCOLOS AEGIS
+  <div class="footer-bottom">
+    <div class="footer-id">
+      A.D.A.M. SYS // SAPIENS II // DOC REF: LAV-ADDAMS-001 // NÃO-OFICIAL
+    </div>
+    <div class="footer-sig">
+      DESENVOLVIDO POR <span>LAVEINE ADDAMS</span><br>
+      INDEPENDENTE DE PROTOCOLOS AEGIS
+    </div>
   </div>
 </footer>
+
+<!-- ═══════════════════════════════ SCRIPTS ═══════════════════════════════ -->
+<script>
+/* ─────────────────────────────────────────
+   PARTICLES — Hero Canvas
+───────────────────────────────────────── */
+(function() {
+  const canvas = document.getElementById('hero-canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [], animId;
+  const N = 60, CONNECT_DIST = 130, MOUSE = { x: -999, y: -999 };
+
+  function resize() {
+    const hero = document.getElementById('hero');
+    W = canvas.width  = hero.offsetWidth;
+    H = canvas.height = hero.offsetHeight;
+  }
+
+  function Particle() {
+    this.x  = Math.random() * W;
+    this.y  = Math.random() * H;
+    this.vx = (Math.random() - 0.5) * 0.35;
+    this.vy = (Math.random() - 0.5) * 0.35;
+    this.r  = Math.random() * 1.5 + 0.5;
+  }
+
+  function init() {
+    particles = [];
+    for (let i = 0; i < N; i++) particles.push(new Particle());
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    for (let i = 0; i < N; i++) {
+      const p = particles[i];
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0 || p.x > W) p.vx *= -1;
+      if (p.y < 0 || p.y > H) p.vy *= -1;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0,200,232,0.6)';
+      ctx.fill();
+
+      for (let j = i + 1; j < N; j++) {
+        const q  = particles[j];
+        const dx = p.x - q.x, dy = p.y - q.y;
+        const d  = Math.sqrt(dx*dx + dy*dy);
+        if (d < CONNECT_DIST) {
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(q.x, q.y);
+          ctx.strokeStyle = `rgba(0,200,232,${0.12 * (1 - d / CONNECT_DIST)})`;
+          ctx.lineWidth = 0.6;
+          ctx.stroke();
+        }
+      }
+
+      // mouse repulsion
+      const mx = p.x - MOUSE.x, my = p.y - MOUSE.y;
+      const md = Math.sqrt(mx*mx + my*my);
+      if (md < 100) {
+        p.vx += mx / md * 0.06;
+        p.vy += my / md * 0.06;
+        const maxSpd = 1.5;
+        const spd = Math.sqrt(p.vx*p.vx + p.vy*p.vy);
+        if (spd > maxSpd) { p.vx = p.vx/spd*maxSpd; p.vy = p.vy/spd*maxSpd; }
+      }
+    }
+    animId = requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); init(); });
+  document.getElementById('hero').addEventListener('mousemove', e => {
+    const r = canvas.getBoundingClientRect();
+    MOUSE.x = e.clientX - r.left;
+    MOUSE.y = e.clientY - r.top;
+  });
+  document.getElementById('hero').addEventListener('mouseleave', () => { MOUSE.x = -999; MOUSE.y = -999; });
+
+  resize(); init(); draw();
+
+  // Stop particles when hero out of view
+  const heroObs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) { cancelAnimationFrame(animId); }
+      else { draw(); }
+    });
+  }, { threshold: 0.1 });
+  heroObs.observe(document.getElementById('hero'));
+})();
+
+/* ─────────────────────────────────────────
+   BOOT SEQUENCE
+───────────────────────────────────────── */
+(function() {
+  const lines = [
+    { text: '> INICIALIZANDO A.D.A.M. v3.9.7...', status: '', delay: 0 },
+    { text: '> MÓDULO ATMOSFÉRICO............', status: '[OK]', cls: 'ok', delay: 600 },
+    { text: '> MOTOR DE ANÁLISE..............', status: '[OK]', cls: 'ok', delay: 1050 },
+    { text: '> INTERFACE HOLOGRÁFICA.........', status: '[ATIVA]', cls: 'ok', delay: 1500 },
+    { text: '> LINK DE DRONE: MITE...........', status: '[STANDBY]', cls: 'wait', delay: 1950 },
+    { text: '> LINK DE DRONE: ORBIS..........', status: '[STANDBY]', cls: 'wait', delay: 2350 },
+    { text: '> AEGIS LINK....................', status: '[STANDBY]', cls: 'wait', delay: 2700 },
+    { text: '> SISTEMA PRONTO.', status: '', cls: 'done', delay: 3100 },
+  ];
+
+  const terminal = document.getElementById('boot-terminal');
+  const cursor   = document.getElementById('boot-cursor');
+  const titleWrap = document.getElementById('hero-title');
+  const scrollHint = document.getElementById('scroll-hint');
+  let skipped = false;
+
+  function showLine(line) {
+    const div = document.createElement('div');
+    div.className = 'boot-line visible';
+    const txt = document.createElement('span');
+    txt.textContent = line.text;
+    div.appendChild(txt);
+    if (line.status) {
+      const s = document.createElement('span');
+      s.className = line.cls || '';
+      s.textContent = ' ' + line.status;
+      div.appendChild(s);
+    }
+    terminal.insertBefore(div, cursor);
+  }
+
+  function complete() {
+    cursor.remove();
+    titleWrap.classList.add('visible');
+    scrollHint.classList.add('visible');
+  }
+
+  function runBoot() {
+    lines.forEach((line, i) => {
+      setTimeout(() => {
+        if (!skipped) showLine(line);
+      }, line.delay);
+    });
+    setTimeout(() => { if (!skipped) complete(); }, 3700);
+  }
+
+  function skipBoot() {
+    skipped = true;
+    terminal.innerHTML = '';
+    lines.forEach(line => showLine(line));
+    complete();
+    document.getElementById('btn-skip').style.display = 'none';
+  }
+
+  document.getElementById('btn-skip').addEventListener('click', skipBoot);
+
+  // Check reduced motion
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    skipBoot();
+  } else {
+    runBoot();
+  }
+})();
+
+/* ─────────────────────────────────────────
+   HUD TABS
+───────────────────────────────────────── */
+function switchTab(tab) {
+  document.querySelectorAll('.hud-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.hud-tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected','false'); });
+  document.getElementById('pane-' + tab).classList.add('active');
+  const btn = document.getElementById('tab-' + tab);
+  btn.classList.add('active');
+  btn.setAttribute('aria-selected','true');
+}
+
+/* ─────────────────────────────────────────
+   LIVE ATMOSPHERIC DATA
+───────────────────────────────────────── */
+(function() {
+  const data = {
+    o2:    { val: 20.97, min: 20.80, max: 21.10, bar: 'bar-o2',    el: 'val-o2',    fmt: v => v.toFixed(2)+'%',    pct: v => v/22*100 },
+    co2:   { val: 0.04,  min: 0.03,  max: 0.06,  bar: 'bar-co2',   el: 'val-co2',   fmt: v => v.toFixed(2)+'%',    pct: v => Math.min(v/0.1*100,100) },
+    n2:    { val: 78.91, min: 78.70, max: 79.10, bar: 'bar-n2',    el: 'val-n2',    fmt: v => v.toFixed(2)+'%',    pct: v => v/80*100 },
+    temp:  { val: 22.3,  min: 21.5,  max: 23.5,  bar: 'bar-temp',  el: 'val-temp',  fmt: v => v.toFixed(1)+'°C',   pct: v => (v-15)/(35-15)*100 },
+    press: { val: 1.02,  min: 0.99,  max: 1.05,  bar: 'bar-press', el: 'val-press', fmt: v => v.toFixed(3)+' atm', pct: v => (v-0.9)/(1.2-0.9)*100 },
+    rad:   { val: 0.18,  min: 0.14,  max: 0.22,  bar: 'bar-rad',   el: 'val-rad',   fmt: v => v.toFixed(2)+' mSv/h', pct: v => v/0.5*100 },
+    humid: { val: 43.7,  min: 40.0,  max: 48.0,  bar: 'bar-humid', el: 'val-humid', fmt: v => v.toFixed(1)+'%',    pct: v => v/100*100 },
+  };
+  const stabEl = document.getElementById('val-stability');
+
+  function update() {
+    let stable = 0;
+    Object.values(data).forEach(d => {
+      const delta = (Math.random() - 0.5) * (d.max - d.min) * 0.15;
+      d.val = Math.max(d.min, Math.min(d.max, d.val + delta));
+      const barEl = document.getElementById(d.bar);
+      const valEl = document.getElementById(d.el);
+      if (barEl) barEl.style.width = d.pct(d.val).toFixed(1) + '%';
+      if (valEl) {
+        valEl.textContent = d.fmt(d.val);
+        valEl.classList.add('updated');
+        setTimeout(() => valEl.classList.remove('updated'), 500);
+      }
+      // simple stability calc
+      const range = d.max - d.min;
+      const mid = (d.max + d.min) / 2;
+      stable += 1 - Math.abs(d.val - mid) / (range / 2);
+    });
+    const pct = Math.round((stable / Object.keys(data).length) * 100);
+    if (stabEl) stabEl.textContent = pct + '%';
+  }
+
+  setInterval(update, 2200);
+})();
+
+/* ─────────────────────────────────────────
+   SCROLL SPY
+───────────────────────────────────────── */
+(function() {
+  const sections = document.querySelectorAll('main section[id]');
+  const navLinks = document.querySelectorAll('nav a');
+
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(l => l.classList.remove('active'));
+        const link = document.querySelector(`nav a[href="#${entry.target.id}"]`);
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { threshold: 0.35 });
+
+  sections.forEach(s => obs.observe(s));
+})();
+
+/* ─────────────────────────────────────────
+   GSAP SCROLL ANIMATIONS
+───────────────────────────────────────── */
+window.addEventListener('load', function() {
+  if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
+  gsap.registerPlugin(ScrollTrigger);
+
+  // Generic reveal
+  gsap.utils.toArray('.reveal').forEach(el => {
+    gsap.fromTo(el,
+      { opacity: 0, y: 28 },
+      {
+        opacity: 1, y: 0, duration: 0.7, ease: 'power2.out',
+        scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play none none none' }
+      }
+    );
+  });
+
+  // Left reveals
+  gsap.utils.toArray('.reveal-left').forEach(el => {
+    gsap.fromTo(el,
+      { opacity: 0, x: -32 },
+      {
+        opacity: 1, x: 0, duration: 0.7, ease: 'power2.out',
+        scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play none none none' }
+      }
+    );
+  });
+
+  // Right reveals
+  gsap.utils.toArray('.reveal-right').forEach(el => {
+    gsap.fromTo(el,
+      { opacity: 0, x: 32 },
+      {
+        opacity: 1, x: 0, duration: 0.7, ease: 'power2.out',
+        scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play none none none' }
+      }
+    );
+  });
+
+  // Animated counters
+  document.querySelectorAll('.metric-val[data-target]').forEach(el => {
+    const target = parseInt(el.getAttribute('data-target'));
+    const suffix = el.getAttribute('data-suffix') || '';
+    ScrollTrigger.create({
+      trigger: el,
+      start: 'top 90%',
+      onEnter: () => {
+        gsap.fromTo({ n: 0 }, { n: target, duration: 1.4, ease: 'power2.out',
+          onUpdate: function() { el.textContent = Math.round(this.targets()[0].n) + suffix; }
+        });
+      },
+      once: true
+    });
+  });
+
+  // Cap cards stagger
+  gsap.utils.toArray('.cap-card').forEach((card, i) => {
+    ScrollTrigger.getAll().forEach(st => {
+      if (st.vars.trigger === card) st.kill();
+    });
+    gsap.fromTo(card,
+      { opacity: 0, y: 32 },
+      {
+        opacity: 1, y: 0,
+        duration: 0.6,
+        delay: (i % 3) * 0.1,
+        ease: 'power2.out',
+        scrollTrigger: { trigger: card, start: 'top 90%', toggleActions: 'play none none none' }
+      }
+    );
+  });
+
+  // Timeline stagger
+  gsap.utils.toArray('#timeline-items .timeline-item').forEach((item, i) => {
+    ScrollTrigger.getAll().forEach(st => {
+      if (st.vars.trigger === item) st.kill();
+    });
+    gsap.fromTo(item,
+      { opacity: 0, y: 24 },
+      {
+        opacity: 1, y: 0, duration: 0.6, delay: i * 0.12, ease: 'power2.out',
+        scrollTrigger: { trigger: '#timeline-items', start: 'top 85%', toggleActions: 'play none none none' }
+      }
+    );
+  });
+
+  // Indicator rows stagger
+  gsap.utils.toArray('.indicator-row').forEach((row, i) => {
+    ScrollTrigger.getAll().forEach(st => {
+      if (st.vars.trigger === row) st.kill();
+    });
+    gsap.fromTo(row,
+      { opacity: 0, x: -20 },
+      {
+        opacity: 1, x: 0, duration: 0.5, delay: i * 0.1, ease: 'power2.out',
+        scrollTrigger: { trigger: row, start: 'top 90%', toggleActions: 'play none none none' }
+      }
+    );
+  });
+});
+
+/* ─────────────────────────────────────────
+   CUSTOM CURSOR LOGIC
+───────────────────────────────────────── */
+(function() {
+  const cursorOuter = document.getElementById('cursor-outer');
+  const cursorDot = document.getElementById('cursor-dot');
+  if(!cursorOuter || !cursorDot) return;
+  
+  let mouseX = window.innerWidth/2, mouseY = window.innerHeight/2;
+  let dotX = mouseX, dotY = mouseY;
+  let outerX = mouseX, outerY = mouseY;
+  
+  window.addEventListener('mousemove', e => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+  });
+
+  document.querySelectorAll('a, button, .hud-tab, .hero-skip').forEach(el => {
+    el.addEventListener('mouseenter', () => cursorOuter.classList.add('hovering'));
+    el.addEventListener('mouseleave', () => cursorOuter.classList.remove('hovering'));
+  });
+
+  function renderCursor() {
+    dotX += (mouseX - dotX) * 0.5;
+    dotY += (mouseY - dotY) * 0.5;
+    outerX += (mouseX - outerX) * 0.15;
+    outerY += (mouseY - outerY) * 0.15;
+    
+    cursorDot.style.left = dotX + 'px';
+    cursorDot.style.top = dotY + 'px';
+    cursorOuter.style.left = outerX + 'px';
+    cursorOuter.style.top = outerY + 'px';
+    
+    requestAnimationFrame(renderCursor);
+  }
+  requestAnimationFrame(renderCursor);
+})();
+
+/* ─────────────────────────────────────────
+   UPTIME TICKER
+───────────────────────────────────────── */
+(function() {
+  const el = document.getElementById('uptime-display');
+  if(!el) return;
+  // Starting from a fake large uptime
+  let seconds = 248 * 3600 + 12 * 60 + 37;
+  
+  setInterval(() => {
+    seconds++;
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    el.textContent = `${h.toString().padStart(3, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }, 1000);
+})();
+
+/* ─────────────────────────────────────────
+   SYSTEM LOG GENERATOR
+───────────────────────────────────────── */
+(function() {
+  const logBody = document.getElementById('syslog-body');
+  if(!logBody) return;
+  
+  const msgTemplates = [
+    { type: 'info', text: 'Rastreio ambiental atualizado. Nível de radiação estável em <span class="val">0.18 mSv/h</span>' },
+    { type: 'ok', text: 'Integridade estrutural do setor 4 confirmada. Tensão em <span class="val">12%</span> da carga crítica' },
+    { type: 'warn', text: 'Flutuação térmica na zona inferior. Compensando sensores' },
+    { type: 'info', text: 'MITE-S reporta área inacessível limpa. Retornando ao ponto de recarga' },
+    { type: 'ok', text: 'Análise gasosa concluída. Mistura respirável mantida' },
+    { type: 'crit', text: 'Microfissura detectada em compartimento externo isolado. Ignorando protocolo AEGIS' },
+    { type: 'info', text: 'ORBIS-LITE escaneamento perimetral em andamento. <span class="val">Progresso: 47%</span>' },
+    { type: 'warn', text: 'Queda leve de pressão no módulo secundário. Reajuste automático ativado' },
+  ];
+  
+  let msgCount = 0;
+  
+  function addLog() {
+    const d = new Date();
+    const timeStr = `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}:${d.getSeconds().toString().padStart(2,'0')}.${d.getMilliseconds().toString().padStart(3,'0')}`;
+    
+    const template = msgTemplates[Math.floor(Math.random() * msgTemplates.length)];
+    
+    const entry = document.createElement('div');
+    entry.className = 'syslog-entry';
+    entry.innerHTML = `
+      <span class="syslog-time">[${timeStr}]</span>
+      <span class="syslog-type ${template.type}">${template.type.toUpperCase()}</span>
+      <span class="syslog-msg">${template.text}</span>
+    `;
+    
+    logBody.prepend(entry);
+    msgCount++;
+    if(msgCount > 30) {
+      logBody.removeChild(logBody.lastChild);
+    }
+    
+    setTimeout(addLog, Math.random() * 3000 + 1000);
+  }
+  
+  // Pre-fill a few
+  for(let i=0; i<6; i++) addLog();
+})();
+
+/* ─────────────────────────────────────────
+   SECTION GLOW & COORDS SCROLL TRICKS
+───────────────────────────────────────── */
+window.addEventListener('load', function() {
+  if (typeof ScrollTrigger === 'undefined') return;
+  
+  document.querySelectorAll('.section-glow').forEach(sec => {
+    ScrollTrigger.create({
+      trigger: sec,
+      start: 'top 70%',
+      onEnter: () => sec.classList.add('glow-active'),
+    });
+  });
+
+  const coords = document.getElementById('hero-coords');
+  if(coords) {
+    window.addEventListener('scroll', () => {
+      const scrollY = window.scrollY;
+      if(scrollY < 1000) {
+        coords.style.transform = `translateY(${scrollY * -0.3}px)`;
+      }
+    });
+  }
+});
+</script>
 
 </body>
 </html>
