@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A.D.A.M. — Sistema de Diagnóstico Atmosférico</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Exo+2:ital,wght@0,100;0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050A0E;
+    --bg2: #080F14;
+    --panel: #0A1420;
+    --panel2: #0D1B2A;
+    --border: #1A3A4A;
+    --border2: #0F2535;
+    --accent: #00C8E8;
+    --accent2: #0096B0;
+    --accent-dim: rgba(0,200,232,0.12);
+    --accent-glow: rgba(0,200,232,0.4);
+    --amber: #F0A030;
+    --amber-dim: rgba(240,160,48,0.15);
+    --green: #20E080;
+    --green-dim: rgba(32,224,128,0.12);
+    --red: #E04040;
+    --orange: #E07820;
+    --text: #B8D4E0;
+    --text-dim: #5A8090;
+    --text-bright: #D8F0FF;
+    --mono: 'Share Tech Mono', monospace;
+    --head: 'Rajdhani', sans-serif;
+    --body: 'Exo 2', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-weight: 300;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* SCANLINE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* GRID BACKGROUND */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,200,232,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,200,232,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: relative;
+    z-index: 10;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(0,200,232,0.05) 0%, transparent 100%);
+    padding: 0 40px;
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 0 12px;
+    border-bottom: 1px solid var(--border2);
+  }
+
+  .sys-id {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .status-bar {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+  }
+
+  .status-dot {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  .dot.amber { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .header-main {
+    padding: 40px 0 36px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 40px;
+    align-items: end;
+  }
+
+  .main-title {
+    font-family: var(--head);
+    font-size: clamp(52px, 7vw, 96px);
+    font-weight: 700;
+    letter-spacing: -2px;
+    line-height: 0.9;
+    color: var(--text-bright);
+    position: relative;
+  }
+
+  .main-title .acronym {
+    display: block;
+    background: linear-gradient(135deg, var(--accent), #40E0F0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: none;
+    filter: drop-shadow(0 0 30px rgba(0,200,232,0.5));
+  }
+
+  .main-title .subtitle-text {
+    display: block;
+    font-size: clamp(11px, 1.2vw, 16px);
+    font-weight: 400;
+    letter-spacing: 4px;
+    color: var(--accent);
+    -webkit-text-fill-color: var(--accent);
+    background: none;
+    filter: none;
+    margin-top: 12px;
+    font-family: var(--mono);
+  }
+
+  .header-meta {
+    text-align: right;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 2;
+  }
+
+  .header-meta span {
+    display: block;
+  }
+
+  .header-meta .val {
+    color: var(--accent);
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(5,10,14,0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+  }
+
+  nav a {
+    font-family: var(--head);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    text-decoration: none;
+    padding: 16px 20px;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  nav a:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* ── LAYOUT ── */
+  main {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 40px 80px;
+  }
+
+  /* ── SECTIONS ── */
+  section {
+    padding: 80px 0;
+    border-bottom: 1px solid var(--border2);
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 5px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    max-width: 60px;
+    height: 1px;
+    background: var(--accent);
+    opacity: 0.4;
+  }
+
+  .section-title {
+    font-family: var(--head);
+    font-size: clamp(28px, 4vw, 52px);
+    font-weight: 700;
+    color: var(--text-bright);
+    letter-spacing: -1px;
+    line-height: 1;
+    margin-bottom: 32px;
+  }
+
+  /* ── OVERVIEW GRID ── */
+  .overview-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 40px;
+    align-items: start;
+  }
+
+  .overview-text p {
+    font-size: 15px;
+    margin-bottom: 20px;
+    color: var(--text);
+    max-width: 680px;
+  }
+
+  .overview-text p:first-child {
+    font-size: 18px;
+    color: var(--text-bright);
+    font-weight: 400;
+    line-height: 1.6;
+  }
+
+  /* ── SPECS PANEL ── */
+  .specs-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .specs-panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+  }
+
+  .specs-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .specs-header .blink {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 1s infinite;
+  }
+
+  .spec-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border2);
+    gap: 16px;
+  }
+
+  .spec-row:last-child { border-bottom: none; }
+
+  .spec-key {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+
+  .spec-val {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    text-align: right;
+  }
+
+  /* ── CAPABILITY CARDS ── */
+  .cap-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 2px;
+    background: var(--border2);
+    border: 1px solid var(--border2);
+  }
+
+  .cap-card {
+    background: var(--panel);
+    padding: 28px 24px;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.2s;
+  }
+
+  .cap-card:hover {
+    background: var(--panel2);
+  }
+
+  .cap-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .cap-card:hover::before { opacity: 1; }
+
+  .cap-icon {
+    width: 36px; height: 36px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    font-size: 16px;
+    color: var(--accent);
+    position: relative;
+  }
+
+  .cap-icon::after {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    background: var(--accent-dim);
+  }
+
+  .cap-title {
+    font-family: var(--head);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-bright);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .cap-desc {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  /* ── UNIT SECTION ── */
+  .unit-header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 24px;
+    align-items: center;
+    padding: 32px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    margin-bottom: 2px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .unit-header::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+  }
+
+  .unit-badge {
+    width: 80px; height: 80px;
+    border: 2px solid var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--head);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+    position: relative;
+    flex-shrink: 0;
+    box-shadow: inset 0 0 20px var(--accent-dim), 0 0 20px var(--accent-dim);
+  }
+
+  .unit-badge::before {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    border: 1px solid var(--accent);
+    opacity: 0.3;
+  }
+
+  .unit-name {
+    font-family: var(--head);
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-bright);
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+
+  .unit-fullname {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    margin-top: 6px;
+  }
+
+  .unit-status {
+    text-align: right;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 2;
+  }
+
+  .unit-status .active {
+    color: var(--green);
+  }
+
+  /* ── VARIANT CARDS ── */
+  .variant-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    background: var(--border2);
+    margin-bottom: 2px;
+  }
+
+  .variant-card {
+    background: var(--panel);
+    padding: 28px;
+    border-left: 3px solid transparent;
+  }
+
+  .variant-card.scout { border-left-color: var(--accent); }
+  .variant-card.pathfinder { border-left-color: var(--amber); }
+
+  .variant-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .variant-card.pathfinder .variant-tag { color: var(--amber); }
+
+  .variant-name {
+    font-family: var(--head);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-bright);
+    margin-bottom: 16px;
+  }
+
+  /* ── DATA LISTS ── */
+  .data-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .data-list li {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+  }
+
+  .data-list li::before {
+    content: '▸';
+    color: var(--accent);
+    flex-shrink: 0;
+    font-size: 10px;
+  }
+
+  .variant-card.pathfinder .data-list li::before { color: var(--amber); }
+
+  /* ── METRICS ── */
+  .metrics-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    background: var(--border2);
+    margin-bottom: 2px;
+  }
+
+  .metric-box {
+    background: var(--panel);
+    padding: 24px;
+    text-align: center;
+  }
+
+  .metric-val {
+    font-family: var(--head);
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  .metric-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* ── STATUS INDICATOR TABLE ── */
+  .indicator-table {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: var(--border2);
+    border: 1px solid var(--border2);
+  }
+
+  .indicator-row {
+    display: grid;
+    grid-template-columns: 60px 140px 1fr;
+    align-items: center;
+    gap: 0;
+    background: var(--panel);
+  }
+
+  .ind-color {
+    height: 100%;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ind-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+  }
+
+  .ind-dot.blue   { background: #00C8E8; box-shadow: 0 0 10px #00C8E8; }
+  .ind-dot.green  { background: #20E080; box-shadow: 0 0 10px #20E080; }
+  .ind-dot.yellow { background: #E0D020; box-shadow: 0 0 10px #E0D020; }
+  .ind-dot.orange { background: #E07820; box-shadow: 0 0 10px #E07820; }
+  .ind-dot.red    { background: #E04040; box-shadow: 0 0 10px #E04040; }
+
+  .ind-name {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    padding: 0 20px;
+    border-left: 1px solid var(--border2);
+    border-right: 1px solid var(--border2);
+    height: 100%;
+    display: flex;
+    align-items: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .ind-desc {
+    font-size: 13px;
+    color: var(--text-dim);
+    padding: 14px 20px;
+  }
+
+  /* ── ORBIS SECTION ── */
+  .orbis-badge {
+    background: linear-gradient(135deg, #0D1B2A, #0A1420);
+    border: 1px solid var(--border);
+    border-radius: 0;
+  }
+
+  .orbis-badge .unit-badge {
+    border-color: var(--green);
+    color: var(--green);
+    box-shadow: inset 0 0 20px var(--green-dim), 0 0 20px var(--green-dim);
+  }
+
+  .orbis-badge .unit-badge::before { border-color: var(--green); }
+
+  /* ── FOOTER ── */
+  footer {
+    position: relative;
+    z-index: 1;
+    border-top: 1px solid var(--border);
+    padding: 32px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(0deg, rgba(0,200,232,0.03) 0%, transparent 100%);
+  }
+
+  .footer-id {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 3px;
+  }
+
+  .footer-sig {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-align: right;
+  }
+
+  .footer-sig span { color: var(--accent); }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  section {
+    animation: fadeUp 0.6s ease both;
+  }
+
+  section:nth-child(1) { animation-delay: 0.1s; }
+  section:nth-child(2) { animation-delay: 0.2s; }
+  section:nth-child(3) { animation-delay: 0.3s; }
+
+  /* ── DIVIDER ── */
+  .h-divider {
+    height: 1px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+    margin: 32px 0;
+    opacity: 0.3;
+  }
+
+  /* ── FULL TEXT BLOCK ── */
+  .text-block {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    padding: 28px 32px;
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.8;
+  }
+
+  .text-block p { margin-bottom: 16px; }
+  .text-block p:last-child { margin-bottom: 0; }
+
+  /* ── HIGHLIGHT ── */
+  .hl { color: var(--accent); }
+  .hl-amber { color: var(--amber); }
+  .hl-green { color: var(--green); }
+
+  /* ── BLACK BOX CALLOUT ── */
+  .callout {
+    background: rgba(0,200,232,0.06);
+    border: 1px solid var(--accent);
+    padding: 20px 24px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    margin-top: 24px;
+  }
+
+  .callout-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .callout-title {
+    font-family: var(--head);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .callout-text {
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent2); }
+
+  @media (max-width: 900px) {
+    header, nav, main, footer { padding-left: 20px; padding-right: 20px; }
+    .overview-grid { grid-template-columns: 1fr; }
+    .variant-grid { grid-template-columns: 1fr; }
+    .metrics-strip { grid-template-columns: repeat(2, 1fr); }
+    .unit-header { grid-template-columns: auto 1fr; }
+    .unit-status { display: none; }
+    .indicator-row { grid-template-columns: 50px 120px 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-top">
+    <span class="sys-id">SAPIENS II — SISTEMA DE SUPORTE TÉCNICO INDEPENDENTE // CLASSIFICAÇÃO: AUXILIAR</span>
+    <div class="status-bar">
+      <div class="status-dot"><div class="dot"></div>SISTEMA ATIVO</div>
+      <div class="status-dot"><div class="dot amber"></div>MODO: CAMPO</div>
+    </div>
+  </div>
+  <div class="header-main">
+    <div class="main-title">
+      <span class="acronym">A.D.A.M.</span>
+      <span class="subtitle-text">Atmospheric Diagnostic &amp; Analysis Module</span>
+    </div>
+    <div class="header-meta">
+      <span>DESENVOLVIDO POR</span>
+      <span class="val">LAVEINE ADDAMS</span>
+      <span>ORIGEM</span>
+      <span class="val">PÓS-GRANDE ACIDENTE</span>
+      <span>PROTOCOLO</span>
+      <span class="val">INDEPENDENTE / DESCENTRALIZADO</span>
+    </div>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav>
+  <a href="#overview">Visão Geral</a>
+  <a href="#capacidades">Capacidades</a>
+  <a href="#mite">Unidade MITE</a>
+  <a href="#orbis">Unidade ORBIS</a>
+  <a href="#indicadores">Indicadores</a>
+</nav>
+
+<main>
+
+  <!-- OVERVIEW -->
+  <section id="overview">
+    <div class="section-label">01 — Visão Geral</div>
+    <h2 class="section-title">O Sistema A.D.A.M.</h2>
+    <div class="overview-grid">
+      <div class="overview-text">
+        <p>Plataforma integrada de diagnóstico atmosférico, análise estrutural e gerenciamento de sobrevivência em ambientes hostis, desenvolvida independentemente por Laveine Addams nos anos posteriores ao <span class="hl">Grande Acidente da Sapiens II</span>.</p>
+        <p>Originalmente concebido como um bracelete técnico auxiliar para manutenção dos Sistemas de Suporte à Vida da Arca, o equipamento evoluiu para uma das ferramentas pessoais mais complexas já produzidas fora dos protocolos oficiais da <span class="hl">AEGIS</span>.</p>
+        <p>Fisicamente acoplado ao antebraço esquerdo através de estrutura metálica semiarticulada em liga de titânio-carbono, o módulo projeta interfaces holográficas compactas de baixa emissão luminosa, operando via feedbacks táteis e pulsos vibracionais discretos — reduzindo dependência sonora em ambientes de alto ruído operacional.</p>
+        <p>Seu núcleo é alimentado por uma IA auxiliar limitada desenvolvida a partir de fragmentos de antigos protocolos de engenharia descartados pela AEGIS — sem autoridade sobre sistemas da nave, mas com <span class="hl">capacidade adaptativa consideravelmente avançada</span> para um módulo independente.</p>
+
+        <div class="callout">
+          <div class="callout-icon">⚡</div>
+          <div>
+            <div class="callout-title">Detecção Antecipada</div>
+            <div class="callout-text">Em registros internos não oficializados, o A.D.A.M. identificou vazamentos atmosféricos, corrosões internas e falhas de pressão com antecedência média de <strong>20 a 40 minutos</strong> em relação aos alertas formais da AEGIS.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="specs-panel">
+        <div class="specs-header">
+          PARÂMETROS DO SISTEMA
+          <div class="blink"></div>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Posição</span>
+          <span class="spec-val">Antebraço Esquerdo</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Material</span>
+          <span class="spec-val">Ti-C Reutilizado</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Interface</span>
+          <span class="spec-val">Holográfica / Tátil</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">IA Core</span>
+          <span class="spec-val">Auxiliar Limitada</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Autonomia</span>
+          <span class="spec-val">Independente</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Blindagem</span>
+          <span class="spec-val">Térmica Parcial</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Aprendizado</span>
+          <span class="spec-val">Contínuo / Campo</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Drones</span>
+          <span class="spec-val">MITE + ORBIS</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Classificação</span>
+          <span class="spec-val">Não-Oficial</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CAPACIDADES -->
+  <section id="capacidades">
+    <div class="section-label">02 — Capacidades Operacionais</div>
+    <h2 class="section-title">Funções Integradas</h2>
+    <div class="cap-grid">
+      <div class="cap-card">
+        <div class="cap-icon">◈</div>
+        <div class="cap-title">Diagnóstico Atmosférico</div>
+        <div class="cap-desc">Análise multicamada em tempo real: composição gasosa, partículas tóxicas, risco microbiológico, níveis radioativos, pressão adaptativa e potencial corrosivo ambiental.</div>
+      </div>
+      <div class="cap-card">
+        <div class="cap-icon">⬡</div>
+        <div class="cap-title">Integridade Estrutural</div>
+        <div class="cap-desc">Monitoramento contínuo de tensão estrutural, corrosão interna, falhas de pressão e microanomalias antes da emissão de alertas pela AEGIS.</div>
+      </div>
+      <div class="cap-card">
+        <div class="cap-icon">◎</div>
+        <div class="cap-title">Modelagem Preditiva</div>
+        <div class="cap-desc">Geração de estimativas preliminares de habitabilidade planetária, necessidades de recalibração ambiental e viabilidade de implantação hidropônica.</div>
+      </div>
+      <div class="cap-card">
+        <div class="cap-icon">▣</div>
+        <div class="cap-title">Gestão de Sobrevivência</div>
+        <div class="cap-desc">Protocolos adaptados de colonização extraplanetária altamente modificados para operações imediatas em cenários de decisão crítica em campo.</div>
+      </div>
+      <div class="cap-card">
+        <div class="cap-icon">⌬</div>
+        <div class="cap-title">Radiação &amp; Térmica</div>
+        <div class="cap-desc">Leitura contínua de níveis de radiação, densidade microbiológica e estabilidade térmica com feedback tátil discreto em ambientes pressurizados.</div>
+      </div>
+      <div class="cap-card">
+        <div class="cap-icon">⟁</div>
+        <div class="cap-title">Aprendizado de Campo</div>
+        <div class="cap-desc">Cada falha estrutural, variação atmosférica e instabilidade energética é armazenada e integrada ao banco de dados interno para reconhecimento futuro.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MITE -->
+  <section id="mite">
+    <div class="section-label">03 — Unidade Auxiliar</div>
+    <h2 class="section-title">Plataforma MITE</h2>
+
+    <div class="unit-header">
+      <div class="unit-badge">MITE</div>
+      <div>
+        <div class="unit-name">Mobile Integrated Technical Explorer</div>
+        <div class="unit-fullname">PLATAFORMA ARACNÍDEA DE INFILTRAÇÃO TÉCNICA E MANUTENÇÃO EMERGENCIAL</div>
+      </div>
+      <div class="unit-status">
+        <span>STATUS: <span class="active">ATIVO</span></span><br>
+        <span>VARIANTES: 02</span><br>
+        <span>INTEGRAÇÃO: A.D.A.M.</span><br>
+        <span>ARQUITETURA: ARACNÍDEA</span>
+      </div>
+    </div>
+
+    <div class="variant-grid">
+      <div class="variant-card scout">
+        <div class="variant-tag">Variante S</div>
+        <div class="variant-name">MITE-S "Scout"</div>
+        <p style="font-size:13px;color:var(--text-dim);margin-bottom:16px;">Compacta (~40cm), operação interna na Sapiens II. Movimentação silenciosa e precisa em ambientes destruídos via microgarras eletrostáticas.</p>
+        <ul class="data-list">
+          <li>Autonomia: 36h contínuas</li>
+          <li>Alcance interno: 12 km do A.D.A.M.</li>
+          <li>Externo sem repetidores: 4 km</li>
+          <li>Acesso a dutos e tubulações</li>
+          <li>Corredores de cabos energéticos</li>
+          <li>Zonas de difícil acesso estrutural</li>
+        </ul>
+      </div>
+      <div class="variant-card pathfinder">
+        <div class="variant-tag" style="color:var(--amber)">Variante M</div>
+        <div class="variant-name">MITE-M "Pathfinder"</div>
+        <p style="font-size:13px;color:var(--text-dim);margin-bottom:16px;">Robusta (~1,2m), missões extraplanetárias. Reforço estrutural, maior capacidade energética e módulos adicionais de exploração ambiental.</p>
+        <ul class="data-list">
+          <li>Autonomia: 72h em modo ativo</li>
+          <li>Alcance: 50–120 km em superfície</li>
+          <li>Implanta repetidores de sinal</li>
+          <li>Compartimentos: kits médicos / amostras</li>
+          <li>Resistência a tempestades EM</li>
+          <li>Exploração subterrânea e cavernas</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="metrics-strip">
+      <div class="metric-box">
+        <span class="metric-val">72h</span>
+        <span class="metric-label">Autonomia Pathfinder</span>
+      </div>
+      <div class="metric-box">
+        <span class="metric-val">120<span style="font-size:20px">km</span></span>
+        <span class="metric-label">Alcance Máx. Campo</span>
+      </div>
+      <div class="metric-box">
+        <span class="metric-val">40<span style="font-size:20px">cm</span></span>
+        <span class="metric-label">Comp. Scout</span>
+      </div>
+      <div class="metric-box">
+        <span class="metric-val">2</span>
+        <span class="metric-label">Variantes Ativas</span>
+      </div>
+    </div>
+
+    <div class="text-block" style="margin-top:2px">
+      <p>Ambas as variantes utilizam <span class="hl">núcleo energético híbrido de longa duração</span> alimentado por células de armazenamento térmico e microplacas fotovoltaicas adaptativas. Em ambientes planetários, a recarga ocorre por absorção solar direta, luz estelar intensa ou conversão térmica de ambientes superaquecidos.</p>
+      <p>Os sistemas funcionais integrados incluem: micro-soldagem térmica, braços manipuladores de precisão, scanner estrutural, coleta de amostras, câmeras ópticas multiespectrais, leitura térmica, análise de tensão estrutural e protocolos básicos de contenção de emergência.</p>
+    </div>
+  </section>
+
+  <!-- ORBIS -->
+  <section id="orbis">
+    <div class="section-label">04 — Unidade Científica</div>
+    <h2 class="section-title">Plataforma ORBIS</h2>
+
+    <div class="unit-header orbis-badge">
+      <div class="unit-badge" style="border-color:var(--green);color:var(--green);box-shadow:inset 0 0 20px var(--green-dim), 0 0 20px var(--green-dim)">ORBIS</div>
+      <div>
+        <div class="unit-name">Orbital Recon &amp; Bio-Integrated Surveyor</div>
+        <div class="unit-fullname">PLATAFORMA ESFÉRICA AUTÔNOMA DE RECONHECIMENTO CIENTÍFICO E ANÁLISE AMBIENTAL</div>
+      </div>
+      <div class="unit-status">
+        <span>STATUS: <span class="active">ATIVO</span></span><br>
+        <span>VARIANTES: 02</span><br>
+        <span>FUNÇÃO: LABORATÓRIO MÓVEL</span><br>
+        <span>NÚCLEO: CAIXA PRETA</span>
+      </div>
+    </div>
+
+    <div class="variant-grid">
+      <div class="variant-card scout" style="border-left-color:var(--green)">
+        <div class="variant-tag" style="color:var(--green)">Variante Lite</div>
+        <div class="variant-name">ORBIS-LITE</div>
+        <p style="font-size:13px;color:var(--text-dim);margin-bottom:16px;">Compacta (~20cm de diâmetro). Reconhecimento rápido e mapeamento interno. Extremamente veloz e silenciosa, sem contato físico constante com superfícies.</p>
+        <ul class="data-list" style="--accent:var(--green)">
+          <li>Alcance interno: ~20 km</li>
+          <li>Superfície aberta: ~10 km</li>
+          <li>Mapeamento tridimensional</li>
+          <li>Escaneamento térmico</li>
+          <li>Análise atmosférica rápida</li>
+          <li>Reconhecimento estrutural</li>
+        </ul>
+      </div>
+      <div class="variant-card" style="border-left-color:var(--amber)">
+        <div class="variant-tag" style="color:var(--amber)">Variante EX</div>
+        <div class="variant-name">ORBIS-EX</div>
+        <p style="font-size:13px;color:var(--text-dim);margin-bottom:16px;">Grande (~60cm de diâmetro). Exploração planetária profunda. Maior capacidade computacional, armazenamento avançado e módulos laboratoriais adicionais.</p>
+        <ul class="data-list">
+          <li>Autonomia: 96h contínuas externas</li>
+          <li>Alcance: &gt;300 km (com repetidores)</li>
+          <li>Microscopia molecular</li>
+          <li>Análise química avançada</li>
+          <li>Radar subterrâneo</li>
+          <li>Modelagem ambiental completa</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="metrics-strip" style="margin-top:2px">
+      <div class="metric-box">
+        <span class="metric-val">96h</span>
+        <span class="metric-label">Autonomia EX</span>
+      </div>
+      <div class="metric-box">
+        <span class="metric-val">300+<span style="font-size:16px">km</span></span>
+        <span class="metric-label">Alcance c/ Satélites</span>
+      </div>
+      <div class="metric-box">
+        <span class="metric-val">60<span style="font-size:20px">cm</span></span>
+        <span class="metric-label">Diâm. ORBIS-EX</span>
+      </div>
+      <div class="metric-box">
+        <span class="metric-val" style="color:var(--amber)">⬛</span>
+        <span class="metric-label">Caixa Preta Ativa</span>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:2px;background:rgba(32,224,128,0.05);border-color:var(--green)">
+      <div class="callout-icon">🔲</div>
+      <div>
+        <div class="callout-title" style="color:var(--green)">Núcleo de Persistência de Dados — "Caixa Preta"</div>
+        <div class="callout-text">Módulo fisicamente isolado com blindagem reforçada e armazenamento redundante. Em caso de destruição parcial, compacta todos os dados coletados, ativa transmissor de emergência criptografado e emite sinais localizáveis pelo A.D.A.M. — permitindo recuperação de informações mesmo após <span style="color:var(--green)">perda operacional total da unidade</span>.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INDICADORES -->
+  <section id="indicadores">
+    <div class="section-label">05 — Protocolo de Status</div>
+    <h2 class="section-title">Sistema de Indicadores</h2>
+    <p style="font-size:14px;color:var(--text-dim);margin-bottom:32px;font-family:var(--mono)">// Padrão cromático compartilhado entre MITE e ORBIS para leitura operacional unificada</p>
+
+    <div class="indicator-table">
+      <div class="indicator-row">
+        <div class="ind-color"><div class="ind-dot blue"></div></div>
+        <div class="ind-name">AZUL</div>
+        <div class="ind-desc">Operação estável. Monitoramento passivo ativo. Todos os sistemas dentro dos parâmetros nominais.</div>
+      </div>
+      <div class="indicator-row">
+        <div class="ind-color"><div class="ind-dot green"></div></div>
+        <div class="ind-name">VERDE</div>
+        <div class="ind-desc">Ambiente seguro confirmado. Coleta ou análise concluída com sucesso. Dados validados.</div>
+      </div>
+      <div class="indicator-row">
+        <div class="ind-color"><div class="ind-dot yellow"></div></div>
+        <div class="ind-name">AMARELO</div>
+        <div class="ind-desc">Anomalia detectada. Necessidade de atenção estrutural ou ambiental. Análise adicional recomendada.</div>
+      </div>
+      <div class="indicator-row">
+        <div class="ind-color"><div class="ind-dot orange"></div></div>
+        <div class="ind-name">LARANJA</div>
+        <div class="ind-desc">Risco ambiental elevado. Dano operacional moderado detectado. Protocolo de contenção ativado.</div>
+      </div>
+      <div class="indicator-row">
+        <div class="ind-color"><div class="ind-dot red"></div></div>
+        <div class="ind-name">VERMELHO</div>
+        <div class="ind-desc">Falha crítica. Contaminação severa, ameaça biológica, risco de perda da unidade ou colapso operacional iminente.</div>
+      </div>
+    </div>
+
+    <div class="h-divider" style="margin-top:40px"></div>
+
+    <div class="text-block">
+      <p>Embora oficialmente classificados apenas como <span class="hl">equipamentos auxiliares de engenharia</span>, o A.D.A.M. e suas unidades complementares representam, na prática, extensões diretas da metodologia operacional de Laveine Addams.</p>
+      <p>Todos os sistemas foram concebidos sob a mesma lógica funcional: <span class="hl">independência operacional, redundância técnica e sobrevivência adaptativa</span> diante de ambientes imprevisíveis. Dentro da Sapiens II, poucos engenheiros compreendem tão profundamente que a diferença entre continuar vivo e desaparecer no vazio frequentemente depende da capacidade de prever falhas antes que elas existam formalmente.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="footer-id">
+    A.D.A.M. SYS // SAPIENS II // DOC REF: LAV-ADDAMS-001 // NÃO-OFICIAL
+  </div>
+  <div class="footer-sig">
+    DESENVOLVIDO POR <span>LAVEINE ADDAMS</span><br>
+    INDEPENDENTE DE PROTOCOLOS AEGIS
+  </div>
+</footer>
+
+</body>
+</html>
